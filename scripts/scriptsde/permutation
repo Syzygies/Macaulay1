@@ -1,0 +1,54 @@
+incr-set prlevel 1
+if #0=3 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<permutation n x[i1]x[i2]..x[in] p
+;;;
+;;; computes the permutation matrix which expresses
+;;; 	i1..in
+;;; as a
+;;; permutation of
+;;; 	1..n.
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;		n = number of letters permuted
+;;;		x[i1]x[i2]..x[in] = the permutation, as a list in order
+;;; 					of the variables x[1]x[2]..x[n]		
+;;; Output values:
+;;;		p = n x n matrix expressing the permutation.
+;;;
+;Last modified 2/20/89 DE, 5/15/89 DE
+
+START:
+;Save the old ring:
+<getvars @oldvars
+
+;make a new ring with vars x[1]..x[n]
+<ring #1 x[1]-x[#1] @r
+
+;make a new ring with vars x[i1]..x[in]
+<ring #1 #2 @s
+
+;Map the variables in the usual order
+;from the first ring to the second:
+fetch @r @r    
+
+;lift the map given by the in-order variables
+;along the map given by the permuted variables
+;to get the permutation matrix:
+lift-std @s @w
+lift @w @r @p
+
+;Map back to the original ring:
+ev @oldvars @p #3
+
+kill @oldvars 
+kill @r @r'zero @s @s'zero @w @p
+END:
+incr-set prlevel -1
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<permutation
+<permutation 3 x[2]x[1]x[3] q
+type q

@@ -1,0 +1,39 @@
+incr-set prlevel 1
+if #0>0 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<column_vector j f1 f2 ... fn
+;;;
+;;; Creates a column vector j over the current ring with entries f1, ..., fn.
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;   f1, ..., fn = polynomial expressions in the current ring
+;;;
+;;; Output values:
+;;;   j = result nx1 matrix with entries f1, ..., fn.
+;;;
+; created 12/31/89,DE
+START:
+
+poly @f 0  ; @f is killed at the end, even if n = 0.
+int @i 2
+<zeromat 1 0 #1
+loop:
+    if (@i>(#0)) done
+
+    poly @f #(@i)
+    concat #1 @f
+    int @i @i+1
+    jump loop
+
+done:
+transpose #1 #1
+kill @i @f
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLES ;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 5 a-e r
+<column_vector j a2 ab ac a(b+c)^2
+type j

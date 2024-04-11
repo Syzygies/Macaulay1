@@ -1,0 +1,85 @@
+incr-set prlevel 1
+if #0=3 START 
+incr-set prlevel -1
+;
+;;; Usage
+;;;     <binomial n k b
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;; 	n,k = integers
+;;;
+;;; Output values
+;;;		b = n choose k.
+;;; Sets b to the binomial coefficient n choose k.
+;;; This is the combinatorial binomial coefficient, =0 if n<0.
+;;; 
+;;; Caveat:  Works up to n = 29, all k, but not for n=30, k=15.
+;Created 4/89 DE.  Revised 5/13/89
+START:
+
+int n@ #1
+int k@ #2
+
+if n@<0 ZERO
+
+if (n@=0)*(k@=0) ONE
+
+if k@<(n@-k@) STARTA
+int k@ n@-k@
+
+STARTA:
+
+if k@<0 ZERO
+if k@=0 ONE
+
+;Initialize for the loop
+int bin@ n@
+int i@ 1
+
+LOOP:
+if i@>=k@ EXIT
+int n@ n@-1
+int i@ i@+1
+int bin@ bin@*n@
+int bin@ bin@/i@
+jump LOOP
+
+EXIT:
+int #3 bin@
+jump ENDA
+
+ZERO:
+int #3 0
+jump ENDA
+
+ONE:
+int #3 1
+
+ENDA:
+;i@ and bin@ might not have been created,
+;which would give an error message; so create
+;before killing:
+int i@ 0
+int bin@ 0
+kill n@ k@ bin@ i@
+incr-set prlevel -1
+type #3
+incr-set prlevel 1
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<binomial
+<binomial 3 3 n
+<binomial 4 1 n
+<binomial 4 2 n
+<binomial 5 0 n
+<binomial 5 -3 n
+<binomial 5 5 n
+<binomial 5 6 n
+<binomial 0 1 n
+<binomial -3 2 n
+
+<binomial 29 14 n

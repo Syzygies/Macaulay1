@@ -1,0 +1,83 @@
+incr-set prlevel 1
+if #0=4 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;;     <adjoint f A B g
+;;;
+;;; Given a map f:(A \tensor B) --> C and the identity maps A of A and
+;;; B of B,
+;;; where A,B,C are free modules, this script sets g to the adjoint
+;;; map g:A --> (C \tensor B^*).
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		f = c x a*b  matrix
+;;;		A = a x a identity matrix
+;;;		B = b x b identity matrix
+;;;
+;;; Output values:
+;;;		g = b*c x a matrix
+;;; 
+;;; It does this by writing g as the composite of
+;;; T = (A \tensor t) : A --> (A \tensor B \tensor B^*)
+;;; where t is the trace map
+;;; t: R --> (B\tensor B^*),
+;;; and the map
+;;; S = (f \tensor B^*):(A \tensor B \tensor B^*) --> (C \tensor B^*).
+
+;Created 3/30/89 by DE
+START:
+
+;form the trace map t:
+flatten #3 @t
+transpose @t @t
+
+;make the tensor products:
+
+outer #2 @t @T
+
+transpose #3 @B'
+outer #1 @B' @S
+
+;compose
+mult @S @T #4
+
+kill @t @T @B' @S
+
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+ring r
+;
+7
+a[1]-a[3]
+b[1]-b[4]
+;
+;
+
+cat a[1] a
+0
+0..2
+cat b[1] b
+0
+0..3
+
+outer a b f
+<idencoldegs a A
+<idencoldegs b B
+
+<adjoint
+<adjoint f A B g
+type f
+type g
+; a[1]b[1] a[2]b[1] a[3]b[1]
+; a[1]b[2] a[2]b[2] a[3]b[2]
+; a[1]b[3] a[2]b[3] a[3]b[3]
+; a[1]b[4] a[2]b[4] a[3]b[4]
+
+listvars
+;;;;;;;;;;;;

@@ -1,0 +1,122 @@
+incr-set prlevel 1
+if #0=2 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<prune a b
+;;;
+;;; finds a minimal presentation b for coker a.
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;		a = matrix
+;;; Output values:
+;;;		b = minimal matrix with the same cokernel
+;;;
+;;; The script prune_and_map gives in addition
+;;; the map from the minimal presentation inducing
+;;; the identity on coker a.
+START:
+;Last modified 2/28/89 DE
+
+;Find a minimal set of generators for the cokernel of a:
+<complement #1 temp@
+
+;Now compute the minimal set of relations on
+;this new set of generators.  Since the minimal
+;presentation is a summand of any presentation, it is
+;enough to do this up to the maximum degree of 
+;the original relations:
+
+transpose #1 @a'
+min @a' @maxdeg
+int @maxdeg -@maxdeg
+
+set autocalc 1
+set autodegree @maxdeg
+modulo temp@ #1 #2
+set autocalc -1
+
+kill temp@ @maxdeg @a'
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 8 a-z r
+
+mat m
+2
+2
+1
+a
+b
+c2
+setdegs m
+1 0
+;
+
+type m
+; 1 b  
+; a c2 
+<prune
+<prune m n
+type n
+; ab-c2 
+listvars
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Some degenerate cases:
+iden 2 a
+
+type a
+<prune a b
+type b
+
+<zeromat 1 1 zero
+
+betti zero
+<prune zero b
+betti b
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;
+;A typical case:
+
+<ring 4 a-z r
+poly i a
+
+<ext 2 r i e
+;ext generally produces a non-minimal presentation of 
+;its result:
+type e
+% type e
+; 0 1 0 0 0 0 0 0 0 0 
+; 0 0 0 0 0 0 0 0 0 1 
+; 0 0 0 0 0 0 0 1 0 0 
+; 0 0 1 0 0 0 0 0 0 0 
+; 0 0 0 0 1 0 0 0 0 0 
+; 0 0 0 0 0 0 0 0 1 0 
+; 0 0 0 0 0 1 0 0 0 0 
+; 0 0 0 0 0 0 1 0 0 0 
+; 0 0 0 1 0 0 0 0 0 0 
+; 1 0 0 0 0 0 0 0 0 0 
+<prune e f
+type f
+betti e
+type @maxdeg
+
+;
+<ring 3 abc r
+<ideal j a3 b4 c5
+transpose j j
+mat m
+3
+5
+a
+1
+0
+setdegs m
+-3 -4 -5
+concat j m
+type j
+<prune_and_map j k map
+type k
+type map

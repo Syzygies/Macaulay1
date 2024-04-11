@@ -1,0 +1,103 @@
+incr_set prlevel 1
+if #0=3 START
+incr_set prlevel -1
+;;; Usage:
+;;; 	<generic_sym_mat var n M
+;;;
+;;; Create a symmetric n x n matrix M over the current ring.
+;;; The (1,1) entry is "var".
+incr_set prlevel 1
+jump END
+;;; Parameters:
+;;;   var = variable in the current ring
+;;;   n   = an integer
+;;; Output values:
+;;;   M = output n x n symmetric matrix
+;;;
+;;; Caveats:
+;;;
+; created 10/12/90 M. Stillman
+START:
+int @n #2
+mat @M
+  @n
+  0
+mat @M'
+  @n
+  0
+
+int @i 1
+int @first 0
+loop:
+   if @i>@n done
+
+   sparse @zeropart
+     1
+     @i-1
+     ;
+
+   sparse @zeropart'
+     1
+     @i
+     ;
+
+   cat #1 @varpart
+     0
+     @first..@first+@n-@i
+
+   cat #1 @varpart'
+     0
+     @first+1..@first+@n-@i
+
+   concat @zeropart @varpart
+   concat @zeropart' @varpart'
+   transpose @zeropart @col
+   transpose @zeropart' @col'
+   concat @M @col
+   concat @M' @col'
+
+   int @first @first+@n-@i+1
+   int @i @i+1
+   jump loop
+
+done:
+   transpose @M @M
+   add @M' @M #3
+   setdegs #3
+     ;
+     ;
+
+; clean up
+int @zeropart 0
+int @varpart 0
+int @col 0
+int @zeropart' 0
+int @varpart' 0
+int @col' 0
+
+kill @n @i @first @M @zeropart @varpart @col @M'
+kill @zeropart' @varpart' @col' 
+
+END:
+incr_set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 15 a-z r
+<generic_sym_mat a 5 M
+type M
+
+;Veronese surface in P4 is
+;codim 3, degree 4
+<ring 15 a-z r
+<generic_sym_mat a 3 M
+type M
+wedge M 2 m
+flatten m i
+std i i
+degree i
+
+
+<ring 3 a-z r
+<generic_sym_mat a 0 M
+type M
+listvars

@@ -1,0 +1,61 @@
+incr-set prlevel 1
+if #0=4 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<random_mat a b i m
+;;;
+;;; defines an  a x b  matrix m whose entries are random linear
+;;; combinations of the entries of the 1xn matrix i.  The rowdegs of m
+;;; are all = 0.
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;		a,b = integers >= 0 (a>0 )
+;;;		i = ideal.
+;;;
+;;; Output values:
+;;;		m = a x b matrix 
+;;;
+;;; Caveat: Unless all the entries of i are of the same degree,
+;;; m will not be homogeneous.
+;;;
+;;;The restriction a>0 is necessary till random can take
+;;; 0s as parameters.
+; created May 11, 1989
+START:
+transpose #3 @col
+nrows @col @size
+
+;initialize loop:
+int @count 1
+<zeromat #1 0 #4
+
+loop:
+	if @count>#2 finish
+	int @count @count+1
+	random #1 @size @ran
+	mult @ran @col @m1
+	concat #4 @m1
+	jump loop
+
+finish:
+kill @col @size @count @ran @m1
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 3 a-z r
+power r 2 r2
+setdegs r2
+	4
+	;
+
+<random_mat
+<random_mat 2 3 r2 m
+type m
+betti m
+
+<random_mat 2 0 r m
+betti m
+
+listvars

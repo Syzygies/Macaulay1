@@ -1,0 +1,27 @@
+incr-set prlevel 1
+if #0=Nparams START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<
+;;;
+;;; (brief description)
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;
+;;; Output values:
+;;;
+;;; (discussion)
+;;;
+;;; Caveats:
+;;;
+; created ...
+START:
+(body)
+
+(clean up code)
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;

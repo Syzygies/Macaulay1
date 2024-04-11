@@ -1,0 +1,104 @@
+incr-set prlevel 1
+if #0=3 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;; 	<hom a b c
+;;;
+;;; The module Hom(a,b) is put into the
+;;; variable c.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		a,b = modules
+;;; Output values:
+;;;		c = Hom(a,b)
+;;; 
+;;; We will compute Hom as the kernel of
+;;; the map 
+;;;                f = Hom(a,B) 
+;;;		Hom(A0,B)  ------------>  Hom(A1,B), where
+;;; where b is a presentation of B and
+;;;            a
+;;;			A1 --> A0
+;;; is a.
+;;; 	The script returns a standard basis
+;Last modified 2/20/89 DE
+START:
+
+;First we compute presentations g0 and g1 of
+;	Hom(A0,b)  and  Hom(A1,b)
+;from the presentation of b.
+
+<idenrowdegs #1 @A0
+<idencoldegs #1 @A1
+<idenrowdegs #2 @B0
+
+transpose @A0 A0_dual@
+transpose @A1 A1_dual@
+
+outer A0_dual@ #2 @g0
+outer A1_dual@ #2 @g1
+
+;Next we make the comparison map that comes
+;from the presentation of a:
+
+transpose #1 a'@
+outer a'@ @B0 f@
+
+<kernel f@ @g0 @g1 #3
+
+;optionally compute a minimal generating set:
+;<prune #3 #3
+
+kill a'@ @A0 @A1 @B0
+kill  A1_dual@ A0_dual@
+kill @g0 @g1 f@
+
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+;Normal bundle of the twisted cubic:
+<ring 4 a-z r
+<monomial_curve 1 2 3 i ;the twisted cubic
+res i ii 2
+<hom ii.2 ii.1 N
+betti N
+; total:      6    12 
+; --------------------
+;    -1:      6    12 
+;The normal bundle is 0_{P1}^2 (5) = 0_{P3} (1)  \0  0_{P1}^2 (2),
+;where we have written \0 for tensor.  Thus, up to a shift of degree
+;by 1, the resolution is the resolution over P3 of 0_{P1}^2 (2),
+;And this has 6 sections.  
+
+;See the script <normal_sheaf for a more efficient 
+;method of computing the normal sheaf.
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Finding Hom(J,r), for normalization:
+
+;The ring r/i of the rational quartic in P3:
+<ring 2 st p1
+<ideal f s4 s3t st3 t4
+<ring 4 a-z r
+<subring f i
+type i
+; c3-bd2 bc-ad b3-a2c ac2-b2d 
+
+;The test ideal:
+<ideal j a2 b2 c2 d2
+;and its presentation matrix j.2:
+res j j 2
+
+<hom j.2 i r1
+<prune r1 r1
+type r1
+betti r1
+; total:      2     5 
+; --------------------
+;     0:      1     - 
+;     1:      1     5 
+;Note the extra generator in degree 1!

@@ -1,0 +1,38 @@
+incr-set prlevel 1
+if #0=3 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<quotient1 id poly resultid
+;;;
+;;; does quotient with respect to a single polynomial,
+;;; read directly from the input line -- that is, NOT
+;;; put into an ideal.
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;
+;;; Output values:
+;;;
+;;; (discussion)
+;;;
+;;; Caveats:
+;;;
+; created July 10, 1993
+START:
+<ideal @j #2
+quotient #1 @j #3
+
+kill @j
+
+
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+<ring 3 abc r
+<ideal I abc
+<quotient1 I ab J
+type J
+

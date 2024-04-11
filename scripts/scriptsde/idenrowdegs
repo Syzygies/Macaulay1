@@ -1,0 +1,50 @@
+incr-set prlevel 1
+if #0=2 START 
+incr-set prlevel -1
+;;; Usage:
+;;;     <idenrowdegs m result
+;;;
+;;; Sets result equal to an identity matrix
+;;; whose size is the number of rows of m and
+;;; whose row and column degrees are
+;;; equal to the row degrees of m.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		m = matrix
+;;; Output values:
+;;; 	I = identity matrix such that
+;;; the composition Im makes sense
+
+;Last modified 4/24/89 DE,MS
+START:
+
+nrows #1 @nrows
+row-degs #1 @rowdegs
+iden @nrows #2
+setdegs #2
+    @rowdegs
+    @rowdegs
+
+kill @nrows @rowdegs 
+END:
+incr-set prlevel -1
+
+$;;;;;;;;;;;;;; EXAMPLES ;;;;;;;;;;;;;;;
+
+<ring 2 ab r
+ideal i
+    2
+    a
+    a2
+<idenrowdegs
+<idenrowdegs i I
+transpose i i'
+<idenrowdegs i' I'
+row-degs i
+row-degs i'
+row-degs I
+col-degs I
+row-degs I'
+col-degs I'

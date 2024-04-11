@@ -1,0 +1,143 @@
+incr-set prlevel 1
+if #0=3 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<sym_cokernel m p n
+;;;
+;;; Sets n to the presentation matrix for the pth symmetric power of the 
+;;; cokernel of m.  Adjoins nrows m new variables, forms the symmetric algebra
+;;; of coker m, and takes the quotient of degree p by degree p+1, intersected with
+;;; the original ring.  Is there a more efficient way?
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;
+;;; Output values:
+;;;
+;;; (discussion)
+;;;
+;;; Caveats: row degrees of m should be positive.
+;;; (Things will be OK if they're not -- so long
+;;; as they are all equal)
+;;;
+; created ...
+START:
+<getvars @oldvars
+nrows #1 @nrows
+row-degs #1 @rowdegs
+characteristic #1 @char
+
+ring @t
+@char
+@nrows
+U[1]-U[100]
+;
+
+ring-sum @t #1 @T
+fetch @t @t
+fetch #1 @M
+ ;betti @t
+ ;betti @M
+mult @t @M @I
+power @t #2 @tp
+power @t #2+1 @tp1
+concat @tp1 @I
+modulo @tp @tp1 @s
+fetch @oldvars @oldvars
+setring #1
+<push_forward1 @oldvars @s #3
+;std #3 #3
+
+kill @nrows @rowdegs @char @t'zero @T'zero @T @t 
+kill @M @I @tp @tp1 @s @oldvars 
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 2 a-z r
+res r rr
+<sym_cokernel rr.2 2 x
+type x
+; -b 0  
+; a  -b 
+; 0  a  
+listvars
+
+; ;;;;;;;;;;
+<ring 2 a-z r
+power r 7 s
+<random_mat 2 4 s m
+<annihilator1 m i
+
+res m mm
+<wedge_cokernel mm.2 3 T
+<annihilator T j
+
+<sym_cokernel m 2 q
+<annihilator q j2
+
+<sym_cokernel m 3 q
+<annihilator q j3
+
+betti i
+betti j
+betti j2
+betti j3
+;we seem to have j = j3 always 
+;(and = j2 for r = 3,5 not r= 4 6 7).
+
+<sym_cokernel m 4 q
+<annihilator q j4
+betti j4
+
+; ;;;;;;;;;
+<ring 3 a-z r
+power r 2 i
+<random_mat 2 4 i m
+<annihilator m i
+betti i
+;     0:      1     - 
+;     1:      -     - 
+;     2:      -     - 
+;     3:      -     6 
+
+<sym_cokernel m 3 n
+<annihilator n j
+betti j
+; total:      1    15 
+; --------------------
+;     0:      1     - 
+;     1:      -     - 
+;     2:      -     - 
+;     3:      -    15 
+
+
+; ;;;;;;;;;
+<ring 8 a-z r
+<generic_mat a 2 4 m
+
+<sym_cokernel m 3 n
+<annihilator n j
+betti j
+; total:      1     6 
+; --------------------
+;     0:      1     - 
+;     1:      -     6 
+
+; ;;;;;;;;;;;;;;;;;;;;;
+
+<ring 3 a-z r
+power r 2 i
+<random_mat 2 4 i m
+<annihilator m i
+
+<sym_cokernel m 3 n
+<annihilator n j
+betti j
+
+res m mm
+<wedge_cokernel mm.2 3 X
+<annihilator X k
+betti k

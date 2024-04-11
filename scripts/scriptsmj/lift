@@ -1,0 +1,194 @@
+incr_set prlevel 1
+if #0>7 START
+incr_set prlevel -1
+;;; Usage:
+;;; 	<lift res w v1 v2 theta lifts lifts_v1 lifts_v2 [k]
+;;;
+;;; Computes comparison maps from the complex (w,v1,v2)
+;;; to the resolution res covering the map theta.  The
+;;; liftings are returned in (lifts,lifts_v1,lifts_v2)
+;;;
+;;; If k is present as an argument, lift attempts to com-
+;;; pute the first k maps.
+;;;
+incr_set prlevel 1
+jump END
+;;; Parameters: res  a res'n in Macaulay computation form
+;;;             (w,v1,v2)  an array of matrices which happens
+;;;                  to be a complex
+;;;             theta - a matrix giving a map from the first
+;;;                  free module of (w,v1,v2) to the first
+;;;                  free module of res.
+;;;		k - an integer (optional) specifying the num-
+;;;		     ber of maps to lift.            
+;;;
+;;; Output values:  (lifts,lifts_v1,lifts_v2) An array of
+;;;                  matrices containing the liftings.
+;;;
+;;; The Array of Matrices Data Type:
+;;;
+;;; An array of matrices is a triple (M,v1,v2) of matrices.
+;;; The first coordinate is a direct sum of matrices such
+;;; that the upper left hand corner is thought of as the
+;;; first matrix, and so on.
+;;;
+;;; The second coordinate is an n by 0 matrix whose row
+;;; degrees give the ranks of the free modules which are
+;;; the sources of the maps.
+;;;
+;;; The third coordinate is an n by 0 matrix whose row de-
+;;; grees give the ranks of the free modules which are the
+;;; targets of the maps.
+;;;
+; created ... 4/9/92 by M.Johnson
+START:
+
+nrows #3 @length
+int @k 0
+copy #5 @lift
+mat #6
+0
+0
+mat #7
+0
+0
+mat #8
+0
+0
+mat @check
+0
+0
+mat @diff
+0
+0
+mat @I
+0
+0
+mat @J
+0
+0
+
+int @flg 0
+
+if #0=8 LOOP
+    int @length #9
+LOOP:
+	int @k @k+1
+	<add_matrix_to_array #6 #7 #8 @lift
+	if @k>@length DONE
+	<extract_matrix #2 #3 #4 @k @psi
+	mult @lift @psi @delta
+	if @k<@length BRANCH
+		lift_std #1.@k
+	BRANCH:
+	lift #1.@k @delta @lift
+
+	;;; check to see if the lift succeeded
+	;;; this is based upon the assumption
+	;;; that whether or not lift succeeds,
+	;;; it does return a matrix of the right
+	;;; shape.
+
+	mult #1.@k @lift @check
+	subtract @check @delta @diff
+	flatten @diff @I
+	compress @I @J
+	ncols @J @flg
+	if @flg>0 FAIL
+jump LOOP
+
+FAIL:
+	shout echo 'lift failed at step:'
+	shout type @k
+DONE:
+
+kill @length @lift @k @psi @delta
+kill @check @diff @I @flg
+END:
+incr_set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+<2byn 0 0 2 3 0 2 0 M I
+
+nres I Ires
+; 2....3....4....
+; computation complete after degree 4
+
+<eagon_northcott M w v1 v2
+
+setdegs w
+! degrees for each row (1 thru 46, default=0's) ? 0:1 2:10 3:20 4:15
+! degrees for each column (1 thru 49, default=compute from rows) ? 2:10 3:20 4:15 5:4
+
+mat theta
+! number of rows    ? 1
+! number of columns ? 1
+! (1,1) ? 1
+
+<lift Ires w v1 v2 theta l l_v1 l_v2
+
+<pres l l_v1 l_v2
+--------------------------------------------------- 
+; 1 
+--------------------------------------------------- 
+; 1 0 0 0 0 0  0 0  0 0 
+; 0 1 0 0 0 0  0 0  0 0 
+; 0 0 1 0 0 0  0 0  0 0 
+; 0 0 0 1 0 -1 0 0  0 0 
+; 0 0 0 0 1 0  0 0  0 0 
+; 0 0 0 0 0 1  0 0  0 0 
+; 0 0 0 0 0 0  1 -1 0 0 
+; 0 0 0 0 0 0  0 0  0 1 
+--------------------------------------------------- 
+; 1 0 0 0 0 0 0  0  0  1  0 0  0 0 0 0  0 0 0  0 
+; 0 1 0 1 0 0 0  0  0  0  0 0  0 0 0 0  0 0 0  0 
+; 0 0 0 0 0 0 -1 0  0  0  1 -1 0 0 0 0  0 0 0  0 
+; 0 0 0 0 0 0 0  -1 -1 0  0 0  0 0 0 0  0 0 0  0 
+; 0 0 0 0 0 0 0  0  0  -1 0 0  0 0 0 0  0 0 0  0 
+; 0 0 0 0 0 0 0  0  0  0  0 0  0 0 1 0  0 0 -1 0 
+; 0 0 0 0 0 0 0  0  0  0  0 -1 0 0 0 0  0 0 0  0 
+; 0 0 0 0 0 0 0  0  0  0  0 0  0 1 0 0  0 0 0  0 
+; 0 0 0 0 0 0 0  0  0  0  0 0  1 0 1 0  0 0 -1 0 
+; 0 0 0 0 0 0 -1 0  0  0  0 0  0 0 0 -1 0 0 0  0 
+; 0 0 0 0 0 0 0  0  0  0  0 0  0 0 0 0  1 0 0  0 
+; 0 0 0 0 0 0 0  0  0  0  0 0  0 0 0 0  0 1 0  0 
+; 0 0 0 0 0 0 0  0  0  0  0 0  0 0 0 0  0 0 -1 0 
+; 0 0 0 0 0 0 0  0  0  0  0 0  0 0 0 0  0 0 0  1 
+--------------------------------------------------- 
+; 0 0 -1 0 0  0  0 0  0  0 0  0 0 0 0  
+; 0 0 0  0 -1 0  0 0  0  0 0  0 0 0 0  
+; 1 0 0  0 0  0  0 0  0  0 0  0 0 0 0  
+; 0 0 0  1 1  0  0 0  0  0 0  0 0 0 0  
+; 0 1 0  0 0  0  0 0  0  0 0  0 0 0 0  
+; 0 0 0  0 0  0  1 0  0  0 0  0 0 0 0  
+; 0 0 0  0 0  -1 0 0  0  0 0  0 0 0 0  
+; 0 0 0  0 0  0  0 -1 -1 0 0  0 0 0 0  
+; 0 0 0  0 0  -1 0 0  0  0 -1 0 0 0 -1 
+--------------------------------------------------- 
+; 0 0 0 -1 
+; 0 0 1 0  
+
+ed w
+
+ce 2 12 c
+
+<lift Ires w v1 v2 theta l l_v1 l_v2
+; column #2 not in module
+'lift failed at step:' 
+; 2
+
+<pres l l_v1 l_v2
+--------------------------------------------------- 
+; 1 
+--------------------------------------------------- 
+; 1 0 0 0 0 0  0 0  0 0 
+; 0 1 0 0 0 0  0 0  0 0 
+; 0 0 1 0 0 0  0 0  0 0 
+; 0 0 0 1 0 -1 0 0  0 0 
+; 0 0 0 0 1 0  0 0  0 0 
+; 0 0 0 0 0 1  0 0  0 0 
+; 0 0 0 0 0 0  1 -1 0 0 
+; 0 0 0 0 0 0  0 0  0 1 
+
+

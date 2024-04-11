@@ -1,0 +1,61 @@
+incr_set prlevel 1
+if #0=3 START
+incr_set prlevel -1
+;;; Usage:
+;;;     <l_homog0 I v J
+;;;
+;;; Homogenize the columns of the matrix "I" using the new variable "v",
+;;; producing a matrix "J" over a new ring.  The monomial order for
+;;; this new ring is "elimination w.r.t. the variable v", which is
+;;; useful for many operations over local rings.
+incr_set prlevel 1
+jump END
+;;; Parameters:
+;;;   I = mxn matrix over a ring R
+;;;   v = a variable name not occuring in R, such as t[-100].
+;;;
+;;; Output values:
+;;;   J = mxn matrix over the ring R[v], whose columns are now homogenious.
+;;;
+;;; This script is used by those scripts which compute over a local ring.
+;;; Let R_m be the localization of R at the homogeneous maximal ideal.
+;;; The lead terms of a polynomial of R_m are the terms of LOWEST degree.
+;;; The elimination order above has the property that the lead term
+;;; of the homogenization of a polynomial f corresponds to the term of lowest
+;;; total degree.
+;;;
+;;; Caveats:  the variable v must be distinct from the variables of the
+;;; ring R.
+;;;
+; last modified 5/22/89 MES
+START:
+     
+; First, create the new ring
+characteristic #1 @charac
+ring @r
+  @charac
+  1
+  #2
+  ;
+  ;
+
+ring_sum @r #1 @s  ; this chooses elimination order w.r.t. "v".
+
+; now homogenize the matrix:
+fetch #1 @j
+homog @j #2 #3
+     
+; clean up
+kill @r @r'zero @s @s'zero @j
+     
+END:
+incr_set prlevel -1
+     
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<l_homog0
+<ring 4 a-d r
+<ideal j a-d3 b2-c3-d10 abc-d5
+<l_homog0 j T k
+putmat k
+pring k
+listvars

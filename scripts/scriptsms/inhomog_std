@@ -1,0 +1,59 @@
+incr_set prlevel 1
+if #0=2 START
+incr_set prlevel -1
+;;; Usage:
+;;;     <inhomog_std I J
+;;;
+;;; Compute a standard basis J of the inhomogeneous submodule I.
+incr_set prlevel 1
+jump END
+;;; Parameters:
+;;;   I = axb (inhomogeneous) matrix
+;;;
+;;; Output values:
+;;;   J = matrix with a rows, together with a (minimal) standard basis
+;;;
+;;; The method we use is to homogenize the columns of J with a new
+;;; variable which is least in the monomial order,
+;;; compute a standard basis in this case, and then dehomogenize.
+;;; The command "stdpart" is used to find a minimal subset of this
+;;; standard basis.
+;;;
+;;; Caveats:
+;;; The standard basis J is minimal, but not usually auto-reduced.
+; last modified 5/23/89 MES
+START:
+     
+; First, create the new ring
+<ring 1 t[-100] @r
+ring_sum #1 @r @s
+     
+; now homogenize the matrix:
+fetch #1 @j
+homog @j t[-100] @m
+     
+; next, compute a standard basis
+std @m @mstd
+     
+; now grab the subset of this standard basis which is a std basis in
+; inhomog. case:
+     
+stdpart @mstd @mstd ! t[-100]
+setring #1
+imap @f @mstd #1
+    t[-100] 1
+    ;
+ev @f @mstd @mstd  ; now @mstd is in the base ring of I
+forcestd @mstd #2
+     
+kill @r @s @j @m @mstd @f
+END:
+incr_set prlevel -1
+     
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 4 a-d r
+<ideal j a3-1 a2b-c+b a2c3-c-1
+<inhomog_std j c
+putstd c
+<inhomog_std
+listvars

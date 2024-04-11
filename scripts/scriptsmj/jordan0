@@ -1,0 +1,53 @@
+incr_set prlevel 1
+if #0=4 START
+incr_set prlevel -1
+;;; Usage:
+;;; 	<jordan0 startvar length eigenvalue matrix
+;;;
+;;; Produces the jordan type 2 x length block of linear
+;;; forms with given eigenvalue.
+;;;
+incr_set prlevel 1
+jump END
+;;; Parameters: startvar - the number af the variable
+;;;		    to start with
+;;;		length - length of the desired matrix
+;;;		eigenvalue - a number
+;;; Output values: matrix - the desired matrix
+;;;
+;;; Used by <2byn to create the jordan blocks
+;;;
+;;;
+; created ... 2/25/92 by M. Johnson
+START:
+
+	int @startvar #1
+	int @length #2
+	poly @eigenvalue #3
+	cat @startvar-1 @row
+		0
+		0..(@length-1)
+
+	mult @eigenvalue @row @row1
+	cat @startvar @row2
+		0
+		0..(@length-2)
+	poly @zero 0
+	concat @row2 @zero
+	add @row1 @row2 @row3
+	<stack #4 @row @row3
+
+	kill @startvar @length @eigenvalue @zero
+	kill @row @row1 @row2 @row3
+
+END:
+incr_set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+<ring 6 a-f r
+<jordan0 1 4 2 M
+type M
+; a    b    c    d
+; 2a+b 2b+c 2c+d 2d

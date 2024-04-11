@@ -1,0 +1,130 @@
+incr-set prlevel 1
+if #0=2 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;; 	<cotan ideal Omega
+;;;
+;;; This script sets Omega to the graded module
+;;; representing the cotangent sheaf of the
+;;; variety defined by the given ideal.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		ideal = 1xn matrix 
+;;; Output values:
+;;;		Omega = module over the base ring of ideal
+;;; 
+;;; The matrix Omega returned is actually a presentation 
+;;; over the polynomial ring of the module 
+;;; coker I/I^2 --> OmegaP,
+;;; where I is the given ideal, in the polynomial
+;;; ring R, and OmegaP is the module corresponding
+;;; to the cotangent sheaf of the ambient projective
+;;; space, restricted to the subscheme Z(I).  OmegaP
+;;; is computed as the kernel of the map
+;;; (R/I)(-1)^(n) --> R/I,
+;;; where n is the number of variables of R,
+;;; so it is a module of depth 2.
+;;;	
+;;;		One would really like to compute the module 
+;;; \sum H^0( Omega(n) ) directly here.  Of course it can be
+;;; obtained from the computed Omega by using 
+;;; <cohomology 0 Omega j Omega'
+;;; but one actually has the desired module already in
+;;; some cases:
+;;; 	If I is a prime then I^2 is primary iff the
+;;; map I/I^2 --> OmegaP is a
+;;; monomorphism.  If this is satisfied and R/I has
+;;; depth >=1, then (sinced OmegaP then has depth >=1) the
+;;; computed module will have depth >= 2 if depth I/I^2 >= 3,
+;;; and depth >= 1 if depth I/I^2 >= 2.
+;;; Thus if I is a complete intersection, and
+;;; depth R/I >= 3 (resp 2) then depth Omega >= 2 (resp 1).
+;;;
+;;; Caveats:
+;;; This script must be modified to work directly in the
+;;; multihomogeneous case (subvariety of Pr x Ps...); 
+;;; there one computes OmegaP as the
+;;; kernel of the direct sum of the the maps corresponding
+;;; to the different sets of variables.  See the script
+;;; cotan_bihom form the bihomogeneous case
+;Created 2/28/89 DE Revised 5/13/89 DE
+START:
+
+;compute a presentation of I
+res #1 I@ 2
+
+;Form the Jacobian matrix which will induce the map
+;I/I^2 --> OmegaP
+jacob I@.1 j@
+transpose j@ j@
+
+qring I@.1 q@
+
+<getvars vars@
+
+;compute the presentation m of I/I^2 over q
+ev q@ I@.2 m@
+
+;Move the jacobian matrix to q
+ev q@ j@ j@
+
+;compute OmegaP, which will be presented over q
+;by q.3
+res q@ q@ 3
+
+;Now compute the map I/I^2 --> OmegaP
+lift q@.2 j@ k@
+
+;form the presentation k of the cotangent sheaf
+concat k@ q@.3
+
+;now lift back to the original ring
+
+setring #1
+<getvars origvars@
+
+ev origvars@ k@ k@
+tensor k@ #1 #2
+
+kill vars@ origvars@ I@ m@ j@ k@ q@ q@'zero
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+; The cotangent sheaf of a plane curve of
+;degree d is 0(d-3)
+;
+;Here's the case of a plane quartic
+int d 4
+
+<ring 3 xyz r
+
+ideal i
+1
+x^d+y^d+z^d
+
+<cotan
+<cotan i w
+<prune w w
+type w
+betti w
+
+;The answer is not yet of depth 2, so we must
+;compute H^0_*
+
+<cohomology1 0 w 3 W
+type W
+<prune W W
+type W
+betti W
+; total:      1     1 
+; --------------------
+;    -1:      1     - 
+;     0:      -     - 
+;     1:      -     - 
+;     2:      -     1 
+;This is the depth 2 version -- its 0(1) on the quartic.

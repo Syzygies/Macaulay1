@@ -1,0 +1,120 @@
+incr-set prlevel 1
+if #0=2 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<perp m n
+;;;
+;;; Input is an d-dimensional linear space
+;;; of linear transformations, expressed as a
+;;; v x w matrix of linear forms in d 
+;;; vars over current ring. 
+;;;
+;;; Output is a (vw-d)-dimensional linear space
+;;; of w x v matrices, expressed as a w x v matrix
+;;; of linear forms n over the current ring, which
+;;; must have at least vw-d variables (the first vw-d
+;;; of which are used.)
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;       m a matrix of linear forms
+;;; Output values:
+;;;       n a matrix of linear forms over the current
+;;; ring.
+;;;
+;;; Flattening m and taking the jacobian gives 
+;;; the dual m1' of the expression of m as a linear
+;;; space of matrices:
+;;;     m1: D ---> V 0 W 
+;;;(where 0 denotes tensor product)
+;;;
+;;; The kernel of m1', treated as a map
+;;;     n1: E ---> W^* 0 V^*
+;;;
+;;; gives rise to n.
+;;;
+; created 1/20/90 DE
+START:
+;Get a handle to the current ring:
+<getvars @curr
+
+
+setring #1
+flatten #1 @mflat
+std @mflat @mvars
+ncols @mvars @d
+diff @mvars @mflat @m1'
+res @m1' @n1 2
+;the kernel of @m1' is @n1
+copy @n1.2 @n1
+
+;Now we need to convert @n1 to a matrix of linear 
+;forms over the previous current ring.
+;First make temporary rings with variables corresponding
+;to the rows and cols of m:
+nrows #1 @nrows
+ncols #1 @ncols
+<ring @nrows w[1]-w[@nrows] @rrows
+<ring @ncols v[1]-v[@ncols] @rcols
+ring-sum @curr @rrows @temp
+ring-sum @temp @rcols @temp
+ring-sum @temp @n1 @temp
+fetch @rrows @rrows
+fetch @rcols @rcols
+fetch @curr @currtemp
+submat @currtemp @currtemp
+;
+1..@nrows*@ncols-@d
+;and form the ideal whose elements are the products
+<mult_ideals @rrows @rcols @prods
+
+fetch @n1 @n1
+transpose @currtemp @currtemp
+mult @n1 @currtemp @n
+
+mult @prods @n @n
+diff @rcols @n @n
+transpose @n @n
+diff @rrows @n @n
+transpose @n @n
+setring @curr
+fetch @n #2
+
+
+kill @curr @mvars @mflat @m1' @nrows @ncols @rrows'zero 
+kill @rcols'zero @temp'zero @temp @rrows @rcols @prods 
+kill @n1 @currtemp @n @d
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 7 a-d r
+cat a M
+0 1
+0 1 2
+type M
+
+<ring 3 xyt s
+<perp M N
+type N
+
+reset
+<ring 2 a-z r
+mat M
+2
+2
+a
+0
+0
+b
+type M
+
+<ring 2 xy s
+<perp M N
+type N
+
+listvars
+
+

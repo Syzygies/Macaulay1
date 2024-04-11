@@ -1,0 +1,50 @@
+incr-set prlevel 1
+if #0=2 START 
+incr-set prlevel -1
+;;; Usage:
+;;;     <idencoldegs m I
+;;;
+;;; Sets I equal to an identity matrix
+;;; whose size is the number of cols of m and
+;;; whose row and column degrees are
+;;; equal to the column degrees of m.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		m = matrix
+;;; Output values:
+;;; 	I = identity matrix such that
+;;; the composition mI makes sense
+
+;Last modified 4/24/89 DE,MS
+START:
+
+ncols #1 @ncols
+col-degs #1 @coldegs
+iden @ncols #2
+setdegs #2
+    @coldegs
+    @coldegs
+
+kill @ncols @coldegs 
+END:
+incr-set prlevel -1
+
+$;;;;;;;;;;;;;; EXAMPLES ;;;;;;;;;;;;;;;
+
+<ring 2 ab r
+ideal i
+    2
+    a
+    a2
+<idencoldegs
+<idencoldegs i I
+transpose i i'
+<idencoldegs i' I'
+col-degs i
+col-degs i'
+row-degs I
+col-degs I
+row-degs I'
+col-degs I'

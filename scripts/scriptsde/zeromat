@@ -1,0 +1,45 @@
+incr-set prlevel 1
+if #0=3 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;; 	<zeromat numrows numcols result
+;;;
+;;; Set the result equal to the numrows x numcols matrix consisting of
+;;; zeros over the current ring.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;   numrows, numcols = integers
+;;;
+;;; Output values:
+;;;   result = matrix over the current ring.
+;;;
+;;; Can be used to compute matrices with either zero rows or zero columns.
+
+; created 4/25/89 DE,MS
+START:
+
+sparse #3
+    #1
+    #2
+    ; all entries are 0.
+
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLES ;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 4 a-d r
+<zeromat
+<zeromat 3 5 m
+type m
+
+<zeromat 0 2 n1
+numinfo n1
+<zeromat 3 0 n2
+numinfo n2
+<zeromat 0 0 n3
+numinfo n3
+<zeromat -1 3 n4
+numinfo n4

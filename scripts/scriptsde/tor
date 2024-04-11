@@ -1,0 +1,112 @@
+incr-set prlevel 1
+if #0=4 START
+incr-set prlevel -1
+;;; Usage:
+;;;     <tor n a b c
+;;;
+;;; Computes c = Tor^n(a,b)
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;		n >= 0 an integer
+;;;		a,b = modules
+;;; Output values:
+;;;		c = module
+;;; Computes Tor as the homology of
+;;; the complex
+;;; Fn+1 \0 B -> Fn \0 B -> Fn-1 \0 B,
+;;; where \0 denotes tensor product, and B is the module
+;;; presented by b.  Checks to
+;;; see whether n = 0, and treats that case differently.
+;;;
+;;; The module c produced usually is not given with a minimal set of 
+;;; generators; call 
+;;;		<prune c c
+;;; to get one.
+;Last modified 4/16/89 DE
+START:
+;Derail the case of n=0
+if #1=0 tensor
+
+;Create the necessary maps:
+;First the desired part of the resolution of A:
+<res #2 a@ #1+1
+
+;Next the presentations g_n and g_nminus1 of
+;FnA \0 B and F(n-1)A \0 B
+
+<idencoldegs a@.#1 A_n@
+<idenrowdegs a@.#1 A_nminus1@
+outer A_n@ #3 g_n@
+outer A_nminus1@ #3 g_nminus1@
+
+;Form the maps f_n and f_nplus1
+;in the complex FA \0 F0B:
+
+<idenrowdegs #3 B0@
+
+outer a@.(#1) B0@ f_n@
+outer a@.(#1+1) B0@ f_nplus1@
+
+<homology g_n@ g_nminus1@ f_nplus1@ f_n@ #4
+
+kill a@
+kill A_n@ A_nminus1@ B0@
+kill f_n@ f_nplus1@
+kill g_n@ g_nminus1@
+
+if #1>0 END
+
+;Take care of the case Tor 0 = tensor
+tensor:
+tensor #2 #3 #4
+
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+;Intersection multiplicity according to Serre:
+;The union of two planes in 4-space meeting another such
+;(multiplicity must be 4 by obvious counting)
+
+<ring 4 a-z r
+
+<ideal i1 a b
+<ideal i2 c d
+intersect i1 i2 i
+
+<random_mat 1 2 r j1   ;defines a random intersection of two planes
+<random_mat 1 2 r j2
+intersect j1 j2 j
+
+<tor
+<tor 0 i j e0
+<tor 1 i j e1
+<tor 2 i j e2
+<tor 3 i j e3
+<tor 4 i j e4
+
+std e0 e0    ;tor 0 does not compute a standard basis itself
+degree e0
+degree e1
+degree e2
+degree e3
+degree e4
+% degree e0
+; codimension : 4
+; degree      : 7
+
+% degree e1
+; codimension : 4
+; degree      : 4
+
+% degree e2
+; codimension : 4
+; degree      : 1
+
+% degree e3
+; codimension : 4
+; degree      : 0
+
+;7-4+1 = 4 = the multiplicity!

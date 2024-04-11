@@ -1,0 +1,194 @@
+incr-set prlevel 1
+if #0=2 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<remove_low_dim m m1
+;;;
+;;; sets m1 to the intersection of 
+;;; the highest dimensional primary components
+;;; of m. Computes as many free resolutions 
+;;; to do this as there are dimensions of embedded 
+;;; primes but no projections. (One could do it
+;;; with just one resolution, at the expense of
+;;; harder computations with ext.  In the examples
+;;; below this is worse!  (See the remark below)
+;;;      If m is already unmixed, the script does
+;;; not change it.
+;;;
+;;;    Observation:  in case m is an r/i, we could
+;;; compute this in one operation:  
+;;;      m1 = ann ext^c(m,r)
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;         m = module
+;;; Output values:
+;;;         m1 = module with same generating set
+;;;                (same row space.)
+;;; Uses the results: 
+;;;     1) codim ext^d (m,R) >= d.
+;;;     2) if p is an associated
+;;; prime of m, with d:=codim p > codim m, then
+;;;         codim ext^d (m,R) = d,
+;;; and ann ext^d (m,R) \in p.
+;;;     3) if 
+;;;         codim ext^d (m,R) = d,
+;;; then there really is an associated prime 
+;;; of codimension d.
+;;;
+; created 11/11/89 DE+CH
+START:
+;Doing the following over a new ring allows garbage collection:
+;Get a handle to the base ring of #1
+setring #1
+<getvars @oldvars
+
+;move to the new ring
+<copyring a @r
+ev @r #1 @m
+
+;compute the projective dimension:
+<res_and_dim @m @mr @d
+codim @mr.1 @codimm
+copy @mr.1 @m1
+
+if @d>@codimm continue
+;if we got here, m is Cohen-Macaulay, thus unmixed,
+;so the answer is m1:=m.
+copy #1 #2
+
+;cleanup what mess we made:
+kill @oldvars @m @r @r'zero @mr @d @codimm @m1
+jump END
+
+continue:
+jump samed 
+
+decrement:
+int @d @d-1
+
+samed:
+if @d=@codimm end
+
+;compute a minimal presentation for ext^d(m,R)
+;(the script ext would compute the resolution again)
+transpose @mr.@d @md
+transpose @mr.(@d+1) @md1
+res @md1 @md1 2
+modulo @md1.2 @md @ext
+<prune @ext @ext
+std @ext @ext
+
+;if ext = 0, decrement:
+ncols @ext @test
+if @test=0 decrement
+
+;if codim ext > d, decrement:
+codim @ext @test
+if @test>@d decrement
+
+;else use the annihilator of ext to improve @m1
+<annihilator @ext @ann 
+<sat @m1 @ann @m1 it 
+
+;Two possible strategies: either
+;jump decrement
+;in which case we only compute one resolution,
+;but may have to compute more complicated exts, 
+;OR
+;check whether the projective dimension has
+;dropped below @d, and if so make @d=@d1.
+;Presumably the trouble of computing a new
+;resolution will be made up for by the simplification
+;in computing the exts.  This is true in all the
+;examples below.
+<res_and_dim @m1 @mr @d1
+if @d1>=@d decrement
+int @d @d1
+jump samed
+
+
+end:
+ev @oldvars @m1 #2
+
+kill @m @m1 @r @r'zero @codimm @mr @ext 
+kill @ann @d  @test @oldvars @md @md1
+kill @d1
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+;Easy cases to test the different endings:
+<ring 3 a-z r
+<remove_low_dim r ii
+type ii
+; a b c
+listvars
+pring ii
+
+<ideal r1 a
+<remove_low_dim r1 ii
+type ii
+; a
+listvars
+pring ii
+
+<ideal i a2 b2
+<ideal j a b c
+power j 3 j
+intersect i j i
+type i
+<remove_low_dim i ii
+type ii
+; a2 b2 
+listvars
+pring ii
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 6 a-z r
+<ideal i a2 b2
+<ideal j a b c
+power j 3 j
+<ideal k a b c d
+power k 4 k
+intersect i j k i
+type i
+<remove_low_dim i ii
+;12.2 secs
+type ii
+; a2 b2 
+
+;;;;;;;;;;;;;;;;;;;
+<ring 5 a-z r
+<monomial_curve 3 4 5 i
+power i 2 i
+std i i
+type i
+<remove_low_dim i ii
+2.5 sec
+nres ii ii
+betti ii
+; total:      1     4     3 
+; --------------------------
+;     0:      1     -     - 
+;     1:      -     -     - 
+;     2:      -     -     - 
+;     3:      -     1     - 
+;     4:      -     3     2 
+;     5:      -     -     1 
+
+;Check that the Cohen-Macaulay case is
+;correctly handled:
+<remove_low_dim ii.1 iii
+nres iii iii
+betti iii
+; total:      1     4     3 
+; --------------------------
+;     0:      1     -     - 
+;     1:      -     -     - 
+;     2:      -     -     - 
+;     3:      -     1     - 
+;     4:      -     3     2 
+;     5:      -     -     1 
+

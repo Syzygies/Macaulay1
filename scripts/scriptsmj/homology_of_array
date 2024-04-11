@@ -1,0 +1,71 @@
+incr_set prlevel 1
+if #0=5 START
+incr_set prlevel -1
+;;; Usage:
+;;; <homology_of_array w v1 v2 k H
+;;;   Computes a presentation matrix for the homology at the
+;;; kth step of the complex given by the triple (w,v1,v2) and
+;;; puts this in H
+;;;
+incr_set prlevel 1
+jump END
+;;; Parameters: (w,v1,v2) an array of matrices
+;;;
+;;; The Array of Matrices Data Type:
+;;;
+;;; An array of matrices is a triple (M,v1,v2) of matrices.
+;;; The first coordinate is a direct sum of matrices such
+;;; that the upper left hand corner is thought of as the
+;;; first matrix, and so on.
+;;;
+;;; The second coordinate is an n by 0 matrix whose row
+;;; degrees give the ranks of the free modules which are
+;;; the sources of the maps.
+;;;
+;;; The third coordinate is an n by 0 matrix whose row de-
+;;; grees give the ranks of the free modules which are the
+;;; targets of the maps.
+;;;
+;;; Output values: H a matrix presenting the
+;;;                homology at the kth step
+;;;
+; created ... 3/25/92 by M.Johnson
+START:
+
+nrows #2 @length
+
+if #4=0 BRANCHA
+	<extract_matrix #1 #2 #3 #4 @M1
+jump BRANCHB
+BRANCHA:
+	row_degree #3 1 @n
+	mat @M1
+	0
+	@n
+BRANCHB:
+
+if #4=@length BRANCH1
+	<extract_matrix #1 #2 #3 (#4)+1 @image
+jump BRANCH2
+BRANCH1:
+	ncols @M1 @n
+	mat @image
+	@n
+	0
+BRANCH2:
+
+syz @M1 -1 @kernel
+
+modulo @kernel @image #5
+
+END:
+incr_set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+<2byn 1 2 0 2 1 0 2 0 M I
+<eagon_northcott M w v1 v2
+<homology_of_array w v1 v2 1 H1
+type H1
+<homology_of_array w v1 v2 2 H2
+type H2

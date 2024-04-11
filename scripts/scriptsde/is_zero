@@ -1,0 +1,90 @@
+incr-set prlevel 1
+if #0=2 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<is_zero m t
+;;;
+;;; Sets t to 0 if the module m is zero, something
+;;; nonzero otherwise:
+;;; this is faster (and does less) than prune.
+;;;
+;;; Note that this is different from the question of whether
+;;; the matrix m is zero (the module is zero iff the matrix
+;;; represents a surjective map!).  To test whether a matrix m
+;;; is zero, the most efficient program is perhaps:
+;;;
+;;; compress m m1
+;;; ncols m1 nzcols
+;;; type nzcols
+;;;
+;;; which gives the number of nonzero columns.
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;          m a module
+;;; Output values:
+;;;          t an int 
+;;;
+;;; The method:  Nakayama's Lemma!
+;;;
+; created 11/25/89 DE
+START:
+;Make a map setting the variables of the current ring to 0:
+<getvars zero@
+subtract zero@ zero@ zero@
+
+;reduce submodule mod S+
+ev zero@ #1 @mbar
+
+;compute the kernel of the transpose of the reduced module
+transpose @mbar @mbar
+res @mbar @mbar 2
+
+;and see if anything was there
+ncols @mbar.2 #2
+
+kill zero@ @mbar
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 3 a-z r
+<ideal i a b
+<ideal j 1
+<ideal k a b c
+concat j i
+dsum i j m
+dsum j j m1
+
+
+<is_zero i t
+type t
+
+<is_zero j t
+type t
+
+<is_zero k t
+type t
+
+<is_zero m t
+type t
+
+<is_zero m1 t
+type t
+
+listvars
+
+; ;;;;;;;;;;;;;;;;;;;;;
+;This is still ok if there is only one variable!
+<ring 1 a r
+<ideal i a
+<ideal j 1
+<ideal k 0
+<is_zero i t
+type t
+<is_zero j t
+type t
+<is_zero k t
+type t

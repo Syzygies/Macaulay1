@@ -1,0 +1,112 @@
+incr-set prlevel 1
+if #0>=2 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<nres m mr [length] [verbose]
+;;;
+;;; computes a standard basis for m,
+;;; and uses the resolution of the ideal of leading forms 
+;;; to bound the regularity.
+;;; Then resolves, using this regularity bound.  
+;;; If there is a third argument present, the resolution is carried
+;;; to this point.
+;;; If there is a fourth argument present, some progress reports are
+;;; printed.
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;         m = module
+;;; Output values:
+;;;         mr = resolution of m
+;;;         length = integer
+;;;
+;;; If generic coordinates have been chosen, then by the theorem of 
+;;; Bayer and stillman, the regularity bound used is the regularity.
+;;;
+;;; Caveats:  Computing a large resolution results in an allocation
+;;; of the blocks available to Macaulay for certain purposes, and
+;;; these blocks are not released into general circulation until
+;;; the ring over which they were created is destroyed.
+;;;     Therefor the "right" strategy here would be to do the computation
+;;; over a new ring, and map the result back to the original ring.
+;;;     Unfortunately "ev" does not act on resolutions, only on modules,
+;;; so that there is no way to get the result back (as of 11/26/89).
+;;;     In such cases the calling script should probably make a new ring
+;;; to do the resolution over, then get what info it needs and destroy
+;;; the resolution and the new ring before going further.
+; created 11/18/89
+START:
+;Start by setting @length to #3 if it is present, the number of variables
+;otherwise.
+nvars #1 @nvars
+int @length @nvars+1
+if #0=2 gotlength
+	int @length #3
+gotlength:
+
+;Compute the regularity bound
+std #1 #2
+in #2 @in
+res @in @in @length
+<regularity @in @bound
+
+;print progress report if the fourth argument is present:
+if #0<4 continue1
+shout echo The regularity bound is:
+shout type @bound
+continue1:
+
+;Compute the resolution up to that bound
+set autocalc 1
+set autodegree @bound
+
+;with progress report if the fourth argument is present:
+if #0<4 continue2
+shout nres #1 #2 @length
+jump cleanup
+
+continue2:
+;without if it's not
+nres #1 #2 @length
+
+cleanup:
+
+set autocalc -1
+kill @in @bound @nvars @length
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+;An example from "real life" where the regularity is 3,
+;but Macaulay normally computes to degree 7
+;for this to work the following integers must
+;be >=2
+reset
+
+
+int a 2
+int b 4
+<ring a+1 x[0]-x[a] r1
+<ring b+1 y[0]-y[b] r2
+ring-sum r1 r2 r
+cat x[0] A
+0 1
+0..a-1
+cat y[0] B
+0 1
+0..b-1
+type A
+type B
+
+<k3carpet A B m
+
+set timer 1
+res m mm 2
+;11 sec (a=2,b=4)
+
+<res m mm 2 ver
+;4 sec (a=2,b=4)
+betti mm
+
+listvars

@@ -1,0 +1,160 @@
+incr-set prlevel 1
+if #0>=2 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<rat_nor_curve p i [m]
+;;;
+;;;     Makes the ideal i of the rational normal curve
+;;; through the n+1 coordinate points,
+;;; the point 1,1,...,1, and the point specified by
+;;; the column vector of n+1 scalars p.  The entries of p
+;;; must be nonzero and pairwise distinct for these to be in
+;;; linearly general position.
+;;;     If present, m is set to a 2xn matrix whose
+;;; 2x2 minors generate i.
+;;;	    Uses the first n+1 variables of the current
+;;; ring (which must have at least that many.)
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;         p a column matrix of pairwise distinct scalars.
+;;; Output values:
+;;;         i an ideal.
+;;;         m a 2 x (ncols p -1) matrix of linear forms
+;;; over the current ring (optional).
+;;; 
+;;;
+;;; If p has n columns, the first row of m is 
+;;;     x[0]...x[n-1]
+;;; and the entry of the second row under x[i]
+;;; is Pi * p[n]x[i]-p[i]x[n],
+;;;   where 
+;;;     Pi = \product_{j != i} (p[n]-p[j]).
+;;; i is set to the 2x2 minors of m.
+;;;
+;;; Caveats:  It would be nice to do this for an
+;;; arbitrary subscheme in linearly general position.
+
+; created 12/31/89 DE
+START:
+<getvars @vars
+nrows #1 @m ;this is n+1
+
+;make the first row:
+submat @vars @firstrow
+;
+1..@m-1
+
+;make second row:
+
+;first the product of the p[n]-p[j]
+submat #1 @pn
+	@m
+	1
+int @i 0
+poly @product 1
+loop:
+int @i @i+1
+if @i>=@m end_product
+submat #1 @pi
+	@i
+	1
+poly @factor {@pn}-{@pi}
+mult @product @factor @product
+jump loop
+end_product:
+
+submat @vars @xn
+	1
+	@m
+int @i 0
+<ideal @secondrow
+loop2:
+int @i @i+1
+if @i>=@m end_secondrow
+submat #1 @pi
+	@i
+	1
+submat @vars @xi
+	1
+	@i
+poly @entry ({@product}/({@pn}-{@pi}))*({@pn}*{@xi}-{@pi}*{@xn})
+concat @secondrow @entry
+jump loop2
+end_secondrow:
+
+transpose @firstrow @firstrow
+transpose @secondrow @secondrow
+copy @firstrow @m
+concat @m @secondrow
+transpose @m @m
+wedge @m 2 #2
+
+if #0=2 cleanup
+copy @m #3
+
+cleanup:
+kill @vars @pn @factor @product @xn @pi @xi @entry 
+kill @i @firstrow @secondrow @m 
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 4 a-z r
+<column_vector P 1 2 4
+type P
+
+set prlevel 0
+
+<rat_nor_curve P i m
+type i
+type m
+listvars
+
+; ;;;;;;;;
+;a canonical curve in P5 as the union of two
+;rational normal curves through the coordinate points:
+<ring 6 a-z r
+<column_vector P 1 2 3 4 5 6
+<column_vector Q 1 4 6 8 10 12
+;Note that these two are colinear with 1 0 0 0 0 0,
+;so not all 3 can lie on a RNC.
+<rat_nor_curve P i
+<rat_nor_curve Q j 
+intersect i j k
+res k kk
+betti kk
+; total:      1     9    16     9     1 
+; --------------------------------------
+;     0:      1     -     -     -     - 
+;     1:      -     6     8     3     - 
+;     2:      -     3     8     6     - 
+;     3:      -     -     -     -     1 
+;NOTE that this is trigonal -- because of the colinearity?
+
+res i ii
+betti ii
+; total:      1    10    20    15     4 
+; --------------------------------------
+;     0:      1     -     -     -     - 
+;     1:      -    10    20    15     4 
+
+; a random example:
+<ring 6 a-z r
+random 6 1 P
+random 6 1 Q
+<rat_nor_curve P i
+<rat_nor_curve Q j 
+intersect i j k
+<res k kk 4 verbose ;res is too slow!
+betti kk
+; total:      1     6    10     6     1 
+; --------------------------------------
+;     0:      1     -     -     -     - 
+;     1:      -     6     5     -     - 
+;     2:      -     -     5     6     - 
+;     3:      -     -     -     -     1 
+
+;Note that we get the general Clifford index
+;in this case

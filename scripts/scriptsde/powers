@@ -1,0 +1,73 @@
+incr-set prlevel 1
+if #0=3 START
+incr-set prlevel -1
+;;; Usage:
+;;;     <powers I p Ip
+;;;
+;;; Find the ideal whose generators are the pth powers 
+;;; of the generators of I.
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;		I = ideal
+;;;		p = positive integer
+;;; Output values:
+;;;		Ip = ideal whose ith generator is the pth power
+;;;				of the ith generator of I.
+
+;Created 3/4/89 by D.Eisenbud
+START:
+copy #1 @I
+
+;Initialize
+ncols @I @n
+ideal #3
+        0
+int @i 1
+
+;Test whether there's anything to do
+if @n start cleanup
+
+start:
+;compute the power of the @ith entry and concat
+;it on to result
+submat @I @entry
+1
+@i
+power @entry #2 @entry
+concat #3 @entry
+
+;decrement @n
+int @m @n-1
+int @n @m
+
+;increment @i
+int @j @i+1
+int @i @j
+
+;Test whether we're done
+if @n start
+
+cleanup:
+kill @i @j @n @m
+kill @entry @I
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 6 a-z r
+<powers
+<powers r 3 j
+type j
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 6 stuxyz r
+
+<ideal J1 s t u
+<ideal J2 x y z
+transpose J1 J1
+mult J1 J2 J
+flatten J J
+type J
+<powers J 3 J
+type J

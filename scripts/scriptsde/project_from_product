@@ -1,0 +1,195 @@
+incr-set prlevel 1
+if #0=3 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<project_from_product I n J
+;;;
+;;; Finds the defining ideal J of the image of a subscheme
+;;; of   A^n x A^m   , minus any component supported on 0 x A^m,
+;;; projected to the second factor.  IT IS ASSUMED THAT THE 
+;;; CURRENT RING has at least m variables, and its first m 
+;;; variables are treated as the variables of A^m.  FURTHER,
+;;; IT IS ASSUMED THAT THE BASE RING OF I HAS AN ELIMINATION ORDER,
+;;; SO THAT ELIM WILL ELIMINATE THE FIRST n VARIABLES.
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;		I = ideal in a ring with n+m variables
+;;;		n = the number of variables to eliminate
+;;; Output values:
+;;;		J = ideal in the current ring.
+;;;
+;;; The usual application is to compute the projection of a subscheme of
+;;; P^(n-1) x A^m or P^(n-1) x P(m-1), given by a bihomogeneous
+;;; ideal I, to the second factor. 
+;;;
+;;; The method is to saturate the given
+;;; ideal with respect to the ideal linear forms
+;;; in the first n variables, and then eliminate the
+;;; first n variables.
+;;;
+; revised 5/6/89
+START:
+;Get a handle to the current ring
+<getvars @curring
+
+;Form the ideal of the first set of variables in the 
+;base ring of I:
+setring #1
+<getvars @vars
+submat @vars @vars
+	1
+	1..#2
+
+;Saturate with respect to vars and project:
+<sat #1 @vars @I
+std @I @I
+elim @I @I
+
+;map to the target ring
+setring @curring
+<zeromat 1 #2 @map
+concat @map @curring
+ev @map @I #3
+
+kill @vars @I @map @curring
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+
+;Computing the dual of a plane curve f=0:
+
+;The ring of P2xP2
+ring r
+! characteristic (if not 31991)       ? ;
+! number of variables                 ? 6
+!   6 variables, please               ? abcxyz
+! variable weights (if not all 1)     ? ;
+! monomial order (if not rev. lex.)   ? 3 3
+
+
+;The nonsingular cubic
+poly f a3+b3+c3 
+jacob f j a..z
+type j
+transpose j j'
+
+;form the row of variables of the second factor
+setring r
+<getvars vars
+elim vars vars2
+
+;Now form the graph of the Gauss map
+transpose vars2 vars2'
+concat j' vars2'
+wedge j' 2 i
+flatten i i
+concat i f
+
+;and project
+<project_from_product
+<project_from_product i 3 k  ;This takes a while!
+type k
+; a6-2a3b3+b6-2a3c3-2b3c3+c6 
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;The cuspidal cubic:
+reset
+;The ring of P2xP2
+ring r
+! characteristic (if not 31991)       ? ;
+! number of variables                 ? 6
+!   6 variables, please               ? abcxyz
+! variable weights (if not all 1)     ? ;
+! monomial order (if not rev. lex.)   ? 3 3
+
+poly f a2c-b3
+jacob f j a..z
+type j
+transpose j j'
+
+;form the row of variables of the second factor
+<getvars vars
+elim vars vars2
+
+;Now form the graph of the Gauss map
+transpose vars2 vars2'
+concat j' vars2'
+wedge j' 2 i
+flatten i i
+concat i f
+type i
+
+;Remove the components coming from the singular locus
+;Note that we get sing x (everything) in the graph,
+;so that if we remove this step the resulting ideal k = 0.
+<sat i j i
+
+;and project
+<project_from_product i 3 k
+type k
+;The dual is again a cuspidal cubic.
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;The nodal cubic:
+
+;The ring of P2xP2
+ring r
+! characteristic (if not 31991)       ? ;
+! number of variables                 ? 6
+!   6 variables, please               ? abcxyz
+! variable weights (if not all 1)     ? ;
+! monomial order (if not rev. lex.)   ? 3 3
+poly f a2c-b2(b-c)
+jacob f j a..z
+type j
+transpose j j'
+
+;form the row of variables of the second factor
+<getvars vars
+elim vars vars2
+
+;Now form the graph of the Gauss map
+transpose vars2 vars2'
+concat j' vars2'
+wedge j' 2 i
+flatten i i
+concat i f
+
+;Remove the components coming from the singular locus
+<sat i j i
+
+;and project
+<project_from_product i 3 k
+type k
+; a4+2a2b2+b4+9a2bc+b3c+27/4a2c2 
+
+;Take the dual of k:
+copy k f
+
+jacob f j a..z
+type j
+transpose j j'
+
+;form the row of variables of the second factor
+<getvars vars
+elim vars vars2
+
+;Now form the graph of the Gauss map
+transpose vars2 vars2'
+concat j' vars2'
+wedge j' 2 i
+flatten i i
+concat i f
+
+;Remove the components coming from the singular locus
+set prlevel 0
+<sat i j i
+
+;and project
+<project_from_product i 3 k
+type k
+; b3-a2c+b2c ;The original polynomial!!!

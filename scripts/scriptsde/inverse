@@ -1,0 +1,35 @@
+incr-set prlevel 1
+if #0=2 START 
+incr-set prlevel -1
+;;; Usage:
+;;; 	<inverse u answer
+;;;
+;;; This file computes the inverse of a scalar
+;;; matrix u by means of the lift command.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		u = invertible scalar matrix
+;;; Output values:
+;;;		answer = inverse of u
+;Last modified 5/14/89 DE
+START:
+
+<idenrowdegs #1 I@
+lift-std #1 r@
+lift r@.1 I@ #2
+
+kill I@ r@
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+random 10 10 m
+<inverse
+<inverse m n
+;10 sec for 30x30, 44sec for 50x50, 5min33sec for 100x100
+mult m n test
+;22 seconds for a 30x30 !
+type test
+listvars

@@ -1,0 +1,111 @@
+incr-set prlevel 1
+if #0=2 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<regularity resn reg
+;;;
+;;; given a resolution res, this script sets reg to the
+;;; smallest integer such that the kth syzygy of the image of res.1
+;;; is generated in degree <= k+reg.  With this numbering the 
+;;; resolution of a rational normal curve has regularity 2, that of
+;;; a canonical curve has regularity 3, and that of any artinian ring
+;;; has regularity equal to 
+;;; 1 + (the maximal degree of a socle element).
+;;; 
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;        resn = a resolution
+;;; Output values:
+;;;        reg = max {max (row degree resn.k) - k + 2}, an integer
+;;; The integer reg is the optimum to use with the sequence
+;;;    <set autocalc 1
+;;;    set autodegree reg
+;;;    res resn.1 resn
+;;; to recreate the resolution, and is used for this purpose
+;;; by the scripts res_to_reg and nres_to_reg.
+;;;
+;;; Caveats:
+;;;
+; created 11/19/89 DE repaired a bug 11/4/92
+START:
+;get bound on the projective dimension:
+nvars #1.1 @step
+;and initialize the variable used to count through the
+;resolution:
+int @step @step+2
+
+;Get an initial value for the regularity:
+transpose #1.1 @temp
+min @temp @max
+int @max -@max
+
+loop:
+int @step @step-1
+if @step<=2 done ;we've already used the first matrix
+
+;compute the row degrees of the kth matrix as the
+;col degrees of the k-1 st matrix -- this avoids
+;a bug in res, which does not correctly set the 
+;row degrees of the matrix of zeros at the end of the
+;resolution when the length of the resolution is = nvars
+;(as of 11/19/89)
+
+transpose #1.(@step-1) @temp
+min @temp @max1
+int @max1 -@max1-@step+2
+
+;see whether the new value is larger than the old,
+;and exchange if so:
+if @max>=@max1 loop
+int @max @max1
+jump loop
+
+
+done:
+int #2 @max
+
+;cleanup
+int @max1 0 ; in case it wasn't created
+kill @step @max @max1 @temp
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+<ring 3 a-z r
+power r 3 r3
+res r3 r3
+<regularity r3 reg
+type reg
+;3
+
+<powers r 3 r3
+res r3 r3
+<regularity r3 reg
+type reg
+;7
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+int n 3
+<ring n*n a-z r
+<generic_mat a n n M
+mult M M M2
+flatten M2 nilp
+betti nilp
+std nilp nilp
+in nilp nilp
+
+set autocalc -1
+nres nilp n
+betti n
+<regularity n reg
+type reg
+;should be 5 in case n=3
+
+set autocalc 1
+set autodegree reg
+nres nilp n
+betti n
+set autocalc -1
+

@@ -1,0 +1,211 @@
+
+incr-set prlevel 1
+if #0=3 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;; 	<adjoin_fractions a J K
+;;;
+;;; Compute S/K = R[(Ja^(-1)], where R is the 
+;;; base ring of J, a is a nonzero-
+;;; divisor of R, and S is the current ring, which is a polynomial 
+;;; ring over R supplied by the user. This version allows 
+;;; degrees of Ja^(-1) to be negative. 
+;;; If the degrees of the generators of J are >= deg a, the y[i]
+;;; should have degrees = the difference; else the result, though
+;;; correct, may not be homogeneous.  In this case the variables
+;;; in S must not include the variable Z[100].
+
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;  a = 1x1 matrix over R
+;;;  J = an ideal of R
+;;;  S = R[{y[i]}] a polynomial ring over R, whose 
+;;;      extra variables y[i] correspond to the
+;;;	     generators, J[i] of J, and have 
+;;;      deg y[i] >= deg J[i] - deg a. 
+;;;
+;;; Output values:
+;;;  K = an ideal of S.
+;;;
+;;; The ideal 
+;;; K = 
+;;;   ((ay[i] - J[i]z^(pos part of deg y[i]- deg J[i] +deg a), all i) : (az)^*).  
+;;; This is correct because
+;;; upon inverting the element az, the desired ideal is obviously 
+;;;	(ay[i] - J[i]z^?, all i).
+;;; 
+;;; The ring R may be a quotient ring.
+;;;
+;;; An alternate method would be to compute the ring 
+;;; R[(J,a)t] using
+;;; the script "blowup", and then set a := 1.  
+;;; In effect this computes
+;;; the ring of an affine open set of the blowup.
+;;;
+;;; Caveats:
+;;;	This version allows arbitrary degrees, at the expense of 
+;;; adding another variable.  The result may not be homogeneous
+;;; if fractions of degree <=0 have been added.
+; last modified 12/18/89 DE,MS
+START:
+;Get a handle to the current ring S
+<getvars @origvars
+
+; sort the variables of S into the 
+; x variables corresponding to the
+; variables of R and the 
+; y variables corresponding to the generators of J.
+imap @xvars #1 @origvars
+    ;
+<getvars @Svars 
+forcestd @xvars @xvars        ; asserts that "xvars" 
+                              ; is a standard basis
+							  
+reduce @xvars @Svars @yvars   ; replaces the x variables by zeros
+
+compress @yvars @yvars        ; removes the zeros, 
+                              ; leaving the y variables.
+
+fetch #1 @a
+fetch #2 @J
+mult @a @yvars @ay
+;Check whether deg y[i]+deg a = deg J[i] for all i,
+;and branch if not:
+
+ncols @yvars @n
+LOOP:
+if @n=0 CONTINUE
+col_degree @yvars @n @test1
+col_degree @ay @n @test2
+if @test1-@test2!=0 HOMOGENIZE
+int @n @n-1
+jump LOOP
+
+CONTINUE:
+subtract @ay @J @K0
+<sat1 @K0 @a #3
+kill @xvars @Svars @yvars @a @J @ay @K0 @n @test1 @test2 
+kill T'zero @T S'zero @S @z @az @dehom @origvars
+
+jump END
+
+HOMOGENIZE:
+<ring 1 Z[100] @T
+ring-sum @origvars @T @S
+fetch @a @a
+fetch @ay @ay
+fetch @J @J
+subtract @ay @J @K0
+homog @K0 Z[100] @K0
+poly @z Z[100]
+mult @a @z @az
+<sat1 @K0 @az #3
+std #3 #3
+imap @dehom @S #3 
+Z[100] 1
+;
+ev @dehom #3 #3
+
+kill @xvars @Svars @yvars @a @J @ay @K0 @n @test1 @test2 
+kill @T'zero @T @S'zero @S @z @az @dehom @origvars
+
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLES ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;1) Two examples not needing homogenization:
+;; Normalization of the cuspidal cubic
+reset
+
+ring r
+;
+2
+ab
+2 3
+;
+
+ideal m
+1
+a3-b2
+qring m r
+
+poly amat a
+poly i b
+type amat
+type i
+
+<ring 1 x S
+ring-sum r S S
+<adjoin_fractions
+<adjoin_fractions amat i n
+type n
+pring S
+
+listvars
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Normalization of the smooth rational quartic:
+
+<ring 4 a-d r
+<monomial_curve 1 3 4 i
+std i i
+qring i R
+
+;The variable a represents s4, while 
+;b represents s3t, so b2/a = s2t2,
+;the missing generator.
+poly numerator b2
+poly denominator a
+
+;Set up the ring for the output:
+<ring 1 x S0
+ring-sum R S0 S
+
+;Now adjoin b2/a:
+setring S
+<adjoin_fractions denominator numerator K
+std K K
+betti K
+;Note that K has only 5 generators: 
+;the sixth is in the defining
+;ideal of S!
+present-ring S L
+fetch K K1
+concat L K1
+nres L L
+betti L  ; The ideal of the rational normal quartic!
+; total:      1     6     8     3 
+; --------------------------------
+;     0:      1     -     -     - 
+;     1:      -     6     8     3 
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;2) Examples needing homogenization:
+;Affine open in a blowup:  k[x,y,x/y]:
+reset
+<ring 2 xy r
+poly Y y
+<ideal J x
+<ring 3 xyz S
+<adjoin_fractions Y J K
+type K
+; yz-x 
+listvars
+; ;;;;;;;;;;;;;;;;
+;Normalization of two skew lines in P3:
+reset
+<ring 4 a-z P3
+<ideal l1 a b
+<ideal l2 c d
+intersect l1 l2 i
+qring i q
+<ideal denom a+c
+<ideal num a
+<ring 1 e S1
+ring-sum q S1 S
+<adjoin_fractions denom num K
+type K

@@ -1,0 +1,49 @@
+incr_set prlevel 1
+if #0=3 START
+incr_set prlevel -1
+;;; Usage:
+;;; 	<pres w v1 v2
+;;;
+;;; list the matrices in the array (w,v1,v2)
+;;;
+incr_set prlevel 1
+jump END
+;;; Parameters: (w,v1,v2) an array of matrices.
+;;;
+;;; The Array of Matrices Data Type:
+;;;
+;;; An array of matrices is a triple (M,v1,v2) of matrices.
+;;; The first coordinate is a direct sum of matrices such
+;;; that the upper left hand corner is thought of as the
+;;; first matrix, and so on.
+;;;
+;;; The second coordinate is an n by 0 matrix whose row
+;;; degrees give the ranks of the free modules which are
+;;; the sources of the maps.
+;;;
+;;; The third coordinate is an n by 0 matrix whose row de-
+;;; grees give the ranks of the free modules which are the
+;;; targets of the maps.
+;;;
+;;; Output values: the array is printed out
+;;;
+; created ... 3/31/92 by M.Johnson
+START:
+
+nrows #2 @length
+
+int @j 0
+LOOP:
+	int @j @j+1
+	<extract_matrix #1 #2 #3 @j @M
+	shout echo ---------------------------------------------------
+	shout type @M
+	if @j<@length LOOP
+
+kill @j @M @length
+
+END:
+
+incr_set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;

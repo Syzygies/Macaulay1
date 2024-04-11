@@ -1,0 +1,41 @@
+int d 2 ;degree of nilpotence
+
+ring r
+;
+3
+exz
+1 2 1
+;
+
+
+<ideal i e2-ez-x x^d
+std i i
+putstd i
+
+
+<ideal E e4
+reduce i E E
+type E
+
+
+
+
+
+
+
+
+
+
+int high 2*d+1
+k-basis i j
+0
+high
+<ideal simp e x 1
+ev simp j j
+compress j j
+putmat j
+
+qring i q
+<ideal E e3
+std E E
+putstd E

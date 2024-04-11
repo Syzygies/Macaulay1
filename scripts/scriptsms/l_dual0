@@ -1,0 +1,63 @@
+incr_set prlevel 1
+if #0=3 START
+incr_set prlevel -1
+;;; Usage:
+;;;     <l_dual0 d J f
+;;;
+;;; Given an integer d, compute
+;;;   J = (x1^d, ..., xn^d), and
+;;;   f = x1^(d-1).x2^(d-1)...xn^(d-1)
+;;; where the variables in the current ring are x1, ..., xn.
+incr_set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;   d = an integer expression.
+;;;
+;;; Output values:
+;;;   J = a 1xn matrix
+;;;   f = a 1x1 matrix.
+;;;
+;;; This script is used in "<l_from_dual" and "<l_to_dual".  The current
+;;; ring may be a quotient ring.
+;;;
+; last modified 5/22/89 MES
+START:
+     
+<getvars @vars
+<zeromat 1 0 @J
+poly @dual 1
+     
+int @d #1
+nvars @vars @nv
+int @i 1
+loop:
+    submat @vars @f
+	;
+	@i
+    poly @dual @f^(@d-1)*@dual
+    poly @f @f^@d
+    concat @J @f
+     
+    int @i @i+1
+    if (@i<=@nv) loop
+     
+copy @J #2
+copy @dual #3
+     
+kill @d @vars @J @dual @nv @i @f
+     
+END:
+incr_set prlevel -1
+     
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+     
+<l_dual0
+     
+<ring 5 a-z r
+<l_dual0 10 j dual
+type j
+type dual
+     
+listvars
+     

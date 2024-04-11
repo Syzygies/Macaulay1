@@ -1,0 +1,177 @@
+incr-set prlevel 1
+if #0=4 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<module_iso m n f yes-no
+;;;
+;;; Sets f equal to a random map from m to n whose degree
+;;; is the difference of the degrees of the smallest degree
+;;; generators of m and n.  Tests, modulo the 
+;;; variables, to see whether f is an isomorphism, and
+;;; sets yes-no to 1 if it is, 0 if it is not.
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;     m, n modules
+;;; Output values:
+;;;     f a matrix representing a map
+;;;       from the row-space of m to that of n
+;;; 
+;;; Uses the fact that an epimorphism from a module to 
+;;; itself must be an isomorphism.  Thus if there are
+;;; epis from m to n and from n to m, then the two
+;;; are iso, and the epis are isos.
+;;;
+;;; Caveats:
+;;;    If the script finds an isomorphism, there is no
+;;; ambiguity.  But it is theoretically possible that
+;;; the script does not find an isomorphism although
+;;; the modules are isomorphic. We could fix this by
+;;; working over a ring with enough variables to create
+;;; the generic map from m to n (of degree 0 with respect
+;;; to the original grading), and then working mod
+;;; the original set of variables see whether the map
+;;; is generically surjective by checking whether its
+;;; dual is an injection.  This wouldn't be hard, but 
+;;; probably much slower ... .
+;;;
+; created 12/18/89 DE
+START:
+min #1 @minm
+min #2 @minn
+int @mn @minn-@minm
+int @nm @minm-@minn
+<random_map #1 #2 @mn @f
+<random_map #2 #1 @nm @g
+copy @f #3
+
+;reduce mod the variables:
+<getvars @reduce
+subtract @reduce @reduce @reduce
+
+ev @reduce @f @f
+<is_zero @f @zf
+if @zf>0 NO ;they are not iso in this case
+
+ev @reduce @g @g
+<is_zero @g @zg
+if @zg>0 NO ;they are not iso in this case
+
+YES:
+int #4 1
+jump cleanup
+
+NO:
+int #4 0
+
+cleanup:
+int @zg 0 ;in case it was never set
+kill @minm @minn @mn @nm @reduce @f @zf @g @zg 
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+
+<ring 3 a-z r
+poly f a3+b3+c3
+std f f
+qring f q
+res q qq 6
+betti qq
+<module_iso qq.4 qq.5 f t
+type t
+<module_iso qq.4 qq.6 f t
+type t
+type f
+type qq.4
+type qq.6
+
+listvars
+
+reset
+
+<ring 3 a-z r
+
+<ideal i1 a2 b2 c2-ab ac bc
+res i1 ii
+bett ii
+transpose ii.2 j
+<module_iso ii.2 j f t
+;8.4 sec
+type t
+type f
+
+power r 2 r2
+<random_mat 1 5 r2 i
+res i ii
+bett ii
+transpose ii.2 j
+<module_iso ii.2 j f t
+;56 sec because of the random choice of i
+type t
+type f
+
+; ;;;;;;;;;;;;;
+;periodic? resolutions over 4 vars mod 7 quadrics:
+;;should be periodic with smallish period in small char.
+;However, the random technique is not perfectly reliable
+;in char small char.
+;In the following example in char = 3,
+;which was periodic of period 7,
+;it gave the right answer only about 2 out of 3 times.
+;This is the example:
+set prcomment 0
+reset
+ring r
+3 
+4
+a-z
+;
+c
+
+mat quads
+1
+7
+a2-b2-ac-ad-bd-d2
+ab-b2-ac+bc+c2-ad-bd-d2
+c2+ad-bd+cd-d2
+ac+bc+ad+cd+d2
+b2-bc-bd+cd+d2
+ad+bd+cd
+bc+cd
+
+;power r 2 r2
+;<random_mat 1 7 r2 quads
+std quads quads
+betti quads
+
+qring quads q
+;<random_mat 2 2 q m
+mat m
+2
+2
+-a-b+c+d
+-a+c-d
+-b+c
+d
+res m mm 14
+betti mm ;This line causes a crash when we've res'd out
+;to the twentieth step!!
+
+<module_iso mm.1 mm.2 f t
+type t
+<module_iso mm.1 mm.3 f t
+type t
+<module_iso mm.1 mm.4 f t
+type t
+<module_iso mm.1 mm.5 f t
+type t
+<module_iso mm.1 mm.6 f t
+type t
+<module_iso mm.1 mm.7 f t
+type t
+
+
+

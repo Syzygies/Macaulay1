@@ -1,0 +1,161 @@
+incr-set prlevel 1
+if #0=6 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<reduce_syzygy_1 m t mindeg deg n map
+;;;   
+;;;     Given a module M that is locally free in 
+;;; codimension s, the script
+;;; looks for an element x in M of smallest
+;;; possible degree >= mindeg that is a minimal 
+;;; generator locally up to given height t <= s
+;;; so that m/x is locally free in codim t.  That is, 
+;;; if m is the presentation matrix of M, and m has rank r,
+;;; then m, augmented by a column representing x,
+;;; has rank r+1 and ideal of r+1 order minors of height
+;;; > t. 
+;;;      The variable deg is set to the degree of x.
+;;; The matrix n is set to be a minimal presentation
+;;; matrix for N = M/x, and map is the matrix of the
+;;; projection map from M to N.
+;;;
+;;; If t is > s, or if the rank of M is <= t, then the 
+;;; script may fail, with an error message.
+;;;
+;;; Typical uses:  if M is an s-syzygy, then N will be a
+;;; t-syzygy.  The script can be used to write "any free
+;;; resolution as a resolution of a 3-generator ideal" (Bruns)
+;;; or to find the minimal representative of a liaison
+;;; class (Ballico-Migliore, ****-****).
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;     m a matrix 
+;;;     t an integer -- that ought to be >= the codim
+;;;                     of the max minors of m
+;;;     mindeg an integer -- that might as well be
+;;;                          >= min rowdegs m
+;;;
+;;; Output values:
+;;;      deg, the degree of x
+;;;      n, map matrices
+;;;
+;;; The program works by choosing random elements of 
+;;; successive degrees >= mindeg until the codim 
+;;; condition is met.
+;;;
+;;; Two alternate methods are offered for computing the
+;;; codim of the locally free locus:  either find the minors
+;;; of the appropriate size of a pres matrix n 
+;;; (ideal of minors method)
+;;; or find the annihilator of the appropriate exterior
+;;; power of coker n (exterior power method).
+;;; Which method is used is set in the first line
+;;; of the script.
+;;;
+;;; Caveats: in the determinantal version below, 
+;;; modules presented by largish matrices will not
+;;; be possible to handle.  The process is probabilistic,
+;;; and will be unreliable over small fields.
+;;; 
+;;;
+; created November 20, 1992 (DE)
+START: ;<reduce_syzygy_1 m t mindeg deg n map   
+;The following line determines the method used. Set
+;@exterior = 1 for the exterior power of the coker method
+;@exterior = anything else for the ideal of minors method.
+;November 22, 1992 the exterior method doesn't work
+;on the Mac (Kahn version). OK on Unix
+
+int @exterior 1
+
+;gather info about M
+min #1 @lowdeg
+max #1 @highdeg
+<rank_prob #1 @rankm
+
+;adjust mindeg; might as well be >= @lowdeg
+int @deg #3
+if @deg>=@lowdeg cont
+int @deg @lowdeg
+cont:
+
+
+int @goal #2
+<ideal @X
+
+nextdeg:  ;loop on the degree of x
+shout type @deg
+<random_map @X #1 @deg @x
+copy #1 @N 
+concat @N @x
+<prune_and_map @N #5 #6
+
+shout type #5
+
+;find codim of locally free locus
+if @exterior=1 exterior
+wedge #5 @rankm @i
+flatten @i @i
+std @i @i
+codim @i @codim
+jump donecodim
+
+exterior:
+;exterior power method
+ncols #5 @ncols
+int @rankN (@ncols-@rankm)+1
+shout echo *****
+shout type @rankN
+shout betti #5
+shout std #5 temp
+
+<wedge_cokernel #5 1+@rankN @wedge
+setdegs @wedge 
+;
+std @wedge @wedge
+codim @wedge @codim
+donecodim:
+
+;prepare to go round again or exit
+int @deg @deg+1
+if @codim>#2 success
+if @deg>@highdeg failure
+jump nextdeg
+
+
+success:
+int #4 @deg-1
+jump cleanup
+
+failure:
+shout echo could not satisfy "reduce_syzygy".  Max codim found
+shout type @codim
+shout echo at degree
+shout type (@deg)-1
+
+cleanup:
+
+;(clean up code)
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+;<reduce_syzygy_1 m t mindeg deg n map
+reset
+<ring 2 a-z r
+<ideal i a3 a2b2 b5
+transpose i j
+betti j
+
+set prlevel -5
+<reduce_syzygy_1 j 1 -10 deg nn mmap
+
+type deg
+betti nn
+type nn
+type mmap
+
+int a 1
+int 

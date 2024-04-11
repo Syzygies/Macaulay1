@@ -1,0 +1,72 @@
+incr-set prlevel 1
+if #0=3 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<i_in_j I J answer
+;;;
+;;; For two submodules I,J of the same free module,
+;;; answer is set to 1 if I is contained in J,
+;;; 0 if not.
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;          I,J submodules of the same free modulel.
+;;; Output values:
+;;;           answer an integer
+;;;
+; created 11/10/89 DE and CH
+START:
+std #2 @K
+reduce @K #1 @K
+compress @K @K
+ncols @K @m
+
+if @m=0 in
+int #3 0
+jump cleanup
+in:
+int #3 1
+cleanup:
+kill @K @m
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 1 a-z r
+<ideal A a
+<ideal B a2
+<i_in_j A B ans0
+type ans0
+<i_in_j B A ans1
+type ans1
+
+;;;;;;;;;;;;;;;;;;
+<ring 2 a-z r
+<ideal j a2 ab b3
+<i_in_j j j ans
+type ans
+
+;;;;;;;;;;;;;;;;;
+<ring 2 a-z r
+mat i
+2
+2
+a
+0
+0
+b
+
+mat j
+2
+2
+a2
+0
+0
+b
+
+<i_in_j i j ans
+type ans
+<i_in_j j i ans
+type ans

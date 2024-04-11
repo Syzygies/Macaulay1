@@ -1,0 +1,43 @@
+incr_set prlevel 1
+if #0=2 START
+incr_set prlevel -1
+;;; Usage:
+;;;     <l_minimal I J
+;;;
+;;; Find a minimal generating set J for the submodule I over localization R
+;;; at the homogeneous maximal ideal of the base ring of I.
+;;;
+incr_set prlevel 1
+jump END
+;;; Parameters:
+;;;  I = mxn matrix, whose columns are not necessarily homogeneous.
+;;;
+;;; Output values:
+;;;  J = mxr matrix, whose columns minimally generate the submodule I over R.
+;;;
+;;; This script uses l_minimal0 to do most of the work.
+;;;
+;;; Caveats:  (1)The resulting minimal generators may not be the simnplest
+;;; possible.  For example, if I = (x2+x3), then over R, I = (x2).  This
+;;; script will not find such a representation.  Nevertheless, this is an
+;;; extremely useful script.
+;;; (2) The base ring of I must not include the variable "t[-100]".
+; last modified 5/23/89 MES
+START:
+     
+<l_homog0 #1 t[-100] @j
+<l_minimal0 @j @jm
+imap @f @j #1
+    t[-100] 1
+    ;
+ev @f @jm #2
+kill @j @jm @f
+     
+END:
+incr_set prlevel -1
+     
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 3 xyz r
+<ideal j x2*(1+y+z2) x2*(1-x-xz2+z3) xy+z3
+<l_minimal j jm
+putmat jm

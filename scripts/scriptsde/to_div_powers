@@ -1,0 +1,52 @@
+incr-set prlevel 1
+if #0=2 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;; 	<to_div_powers f g
+;;;
+;;; Write a polynomial f in the symmetric algebra in terms of divided powers.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;   f = 1x1 matrix.
+;;;
+;;; Output values:
+;;;   g = result 1x1 matrix.
+;;;
+;;; The monomials of g are to be interpreted as monomials in the divided 
+;;; powers.  Thus if f = x2+y3z2, then g = 2x2+12y3z2 is to be interpreted 
+;;; as 2 x^(2) + 12 y^(3) z^(2).
+
+; created 4/26/89 DE,MS
+START:
+
+; separate f into a row vector of monomials and a row vector of coefficients.
+coef #1 @monoms @coefs !
+
+; compute the multipliers for each monomial, and put these into a diagonal 
+; matrix.
+diff @monoms @monoms @multipliers
+poly @zeromap 0
+ev @zeromap @multipliers @multipliers
+
+; combine the multipliers with the monomials with the original coefficients.
+mult @monoms @multipliers @row
+transpose @coefs @coefs'
+mult @row @coefs' #2
+
+kill @monoms @coefs @multipliers @zeromap @row @coefs'
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLES ;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 3 xyz r
+poly f x3+3x2y+3xy2+y3		;(x+y)^3
+<to_div_powers
+<to_div_powers f g
+type g
+; 6x3+6x2y+6xy2+6y3 		;3! (x+y)^(3)
+
+<from_div_powers g h
+type h

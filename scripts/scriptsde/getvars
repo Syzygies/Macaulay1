@@ -1,0 +1,35 @@
+incr-set prlevel 1
+if #0=1 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;; 	<getvars result
+;;; Creates a 1xn matrix containing the variables of the current ring 
+;;; in order.
+incr-set prlevel 1
+jump END
+; last modified 4/25/89 DE,MS Fixed 4/12/91 DE+MS
+START:
+poly @zero 0
+nvars @zero @n
+koszul @n 1 #1
+kill @zero @n
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 30 a[1]-a[30] r
+<getvars
+<getvars vars
+type vars
+ 
+listvars
+
+<ring 2 ab r
+poly B b
+std B B
+qring B q
+<getvars i
+type i
+betti i

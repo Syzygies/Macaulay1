@@ -1,0 +1,113 @@
+incr-set prlevel 1
+if #0=2 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<remove_low_dim_id m m1
+;;;
+;;; When m is an ideal, sets m1 to the intersection of 
+;;; the highest dimensional primary components
+;;; of m. Uses the formula 
+;;;      m1 = annihilator ext^c(m,r),
+;;; where c is the codimension of m.
+;;;      If m is already unmixed, the script does
+;;; not change it.
+;;;
+;;;    Observation:  in case m is an r/i, we could
+;;; compute this in one operation:  
+;;;      m1 = ann ext^c(m,r)
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;         m = module
+;;; Output values:
+;;;         m1 = module with same generating set
+;;;                (same row space.)
+;;; What's the analogue of this method for the case of
+;;; modules?
+; created 11/11/89 DE+CH
+START:
+;Compute the codimension:
+std #1 @m
+codim @m @c
+
+<ext(-,r) @c @m @ext
+<annihilator @ext #2
+
+kill @c @m @ext
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+;Easy cases to test the different endings:
+<ring 3 a-z r
+<remove_low_dim_id r ii
+type ii
+; a b c 
+listvars
+pring ii
+
+<ideal r1 a
+<remove_low_dim_id r1 ii
+type ii
+; a
+listvars
+pring ii
+
+<ideal i a2 b2
+<ideal j a b c
+power j 3 j
+intersect i j i
+type i
+<remove_low_dim_id i ii
+type ii
+; a2 b2 
+listvars
+pring ii
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 6 a-z r
+<ideal i a2 b2
+<ideal j a b c
+power j 3 j
+<ideal k a b c d
+power k 4 k
+intersect i j k i
+type i
+<remove_low_dim_id i ii
+;4 secs.  Was 12.2 secs for <remove_low_dim
+type ii
+; a2 b2 
+
+;;;;;;;;;;;;;;;;;;;
+<ring 5 a-z r
+<monomial_curve 3 4 5 i
+power i 2 i
+std i i
+type i
+<remove_low_dim_id i ii
+2.5 sec
+nres ii ii
+betti ii
+; total:      1     4     3 
+; --------------------------
+;     0:      1     -     - 
+;     1:      -     -     - 
+;     2:      -     -     - 
+;     3:      -     1     - 
+;     4:      -     3     2 
+;     5:      -     -     1 
+
+;Check that the Cohen-Macaulay case is
+;correctly handled:
+<remove_low_dim_id ii.1 iii
+nres iii iii
+betti iii
+; total:      1     4     3 
+; --------------------------
+;     0:      1     -     - 
+;     1:      -     -     - 
+;     2:      -     -     - 
+;     3:      -     1     - 
+;     4:      -     3     2 
+;     5:      -     -     1 

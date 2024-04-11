@@ -1,0 +1,82 @@
+incr-set prlevel 1
+if #0=3 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;; 	<ext(-,R) n a c
+;;;
+;;; A presentation of the module
+;;; Ext^n(a,R) is put into the
+;;; variable c, where A is presented by a and R
+;;; is the ring over which a is defined.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		n = non-negative integer
+;;;		a = module
+;;; Output values:
+;;;		c = Ext^n(a,R)
+;;; We will compute Ext(A,R) as the homology of
+;;;
+;;;                g'             f'
+;;; Hom(F(n-1)A,R) --> Hom(FnA,R) --> Hom(F(n+1)A,R)
+;;;
+;;; where
+;;;             f       g
+;;; 	F(n+1)A --> Fna --> F(n-1)A
+;;;
+;;; is a piece of the resolution of A.
+;;;
+;;; Note that the use of <res instead of res slows
+;;; things down in small examples, but is a big help in
+;;; larger ones.
+
+;Last modified 2/20/89 DE
+START:
+
+;Create the necessary maps:
+;First the desired part of the resolution of A:
+<res #2 a@ #1+1
+
+;Form the maps f' and g'
+;in the complex Hom(F*A,R):
+
+transpose a@.#1+1 @f'
+
+;find the kernel of f':
+res @f' k@ 2
+
+;and factor out the image of g'
+transpose a@.#1 @g'
+modulo k@.2 @g' #3
+
+;optional
+<prune #3 #3
+
+;cleanup: in case @g' wasn't created, do it now:
+poly @g' 0
+kill a@ @f' @g' k@ 
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 3 a-z r
+<ideal i a b
+
+<ext(-,R)
+<ext(-,R) 0 i e
+type e
+
+<ext(-,R) 1 i e
+type e
+
+<ext(-,R) 2 i e
+type e
+; b a 				;this is the only nonzero one
+
+<ext(-,R) 3 i e
+type e
+
+<ext(-,R) 4 i e
+type e

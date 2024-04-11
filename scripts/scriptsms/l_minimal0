@@ -1,0 +1,67 @@
+incr_set prlevel 1
+if #0=2 START
+incr_set prlevel -1
+;;; Usage:
+;;;     <l_minimal0 I J
+;;;
+;;; Find a minimal geneating set, J1,  for a submodule I1 over the
+;;; localization R of a polynomial ring at the origin.
+;;; I is a homogeneous submodule over a ring R[t], and I1 is obtained
+;;; from I by setting "t" to one.  J1 is obtained similarly from J.
+incr_set prlevel 1
+jump END
+;;; Parameters:
+;;;  I = mxn matrix over a ring whose first variable is the homogenizing
+;;;	variable "t" (it can, of course, be named anything).
+;;;
+;;; Output values:
+;;;  J = matrix with m rows, s.t. after setting "t" to one, the columns
+;;;	 minimally generate the submodule I1 as above.
+;;;
+;;; J is computed by finding the relations between I, and m I.  It is
+;;; possible that using as few generators for I as possible initially
+;;; will save alot of computation.
+;;;
+;;; Caveats: This version requires I to be homogeneous.  Use l_minimal
+;;; if I has not yet been homogenized.
+;;;
+; last modified 5/22/89 MES
+START:
+     
+setring #1
+<getvars @vars
+edit @vars
+ce 1 1 1  ; set "t" to 1
+setdegs @vars  ; reset the column degrees after "ce".
+    ;
+    ;
+ncols #1 @nc
+outer @vars #1 @m
+syz @m @nc @n
+     
+poly @f 1  ; ie f maps t to 1, all other vars to 0.
+     
+ev @f @n @n0
+compress @n0 @n0
+     
+; now find the syzygies on the rows of @n0:
+transpose @n0 @n0
+setdegs @n0
+    ;
+    ;
+res @n0 @ns 2
+mult #1 @ns.2 #2
+     
+kill @vars @nc @m @n @f @n0 @ns
+     
+END:
+incr_set prlevel -1
+     
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<l_minimal0
+<ring 3 xyz r
+<ideal j x2*(1+y+z2) x2*(1-x-xz2+z3) xy+z3
+<l_homog0 j t k
+<l_minimal0 k km
+putmat km
+listvars

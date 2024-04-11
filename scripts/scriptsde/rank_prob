@@ -1,0 +1,100 @@
+incr-set prlevel 1
+if #0=2 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<rank_prob m n
+;;;
+;;; finds the rank (probably) by evaluating the 
+;;; entries of the matrix at random numbers and
+;;; computing the kernel of the matrix.
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;		m = matrix
+;;; Output values:
+;;;		n = rank m, an integer
+;;;
+;;;     One might expect to speed up this algorithm by 
+;;; replacing the matrix with its transpose if there were
+;;; more columns than rows, but the difference is only 1 sec
+;;; for the crucial computation if the
+;;; sizes are 50x100 versus 100x50, and the extra transpositioin
+;;; takes about as long.
+;;; Caveats:
+;;;		Because of the use of specialization to a generic point,
+;;; the algorithm requires that the base ring be a polynomial
+;;; ring.  
+;;;     Note that any error coming from the probabilistic
+;;; nature of the algorithm will make the rank too small.
+;;;     One could do the computation over the current
+;;; ring, saving some overhead, but the current version
+;;; is slightly faster for large computations (7+ seconds
+;;; for a random 20x40 matrix as opposed to 10+ seconds
+;;; over a ring with 10 variables.)
+;;;     Is there a good way to do this non-probabalistically?
+
+; created 5/25/89 DE rev 1/91 DE
+START:
+;get a handle to the current ring
+poly @curring 0
+
+;make a random number specialization to a ring with 1 variable
+;(the variable is not used, but no variables causes Macaulay
+;to crash (1990))
+nvars @curring @nvars
+<ring 1 a @r
+random 1 @nvars @map
+ev @map #1 @m
+setdegs @m
+	;
+	;
+set autocalc 1
+set autodegree 0
+
+;The following code is no improvement 
+;for size 50x100 of rank 50
+;replace @m by its transpose if it has more cols than rows
+;ncols @m @ncols
+;nrows @m @nrows
+;if @ncols<=@nrows continue
+;transpose @m @m
+;continue:
+
+;find codimension (as vectorspace) of the kernel,
+;which is, probably, the desired rank:
+res @m @m 2
+ncols @m.1 @ncols1
+ncols @m.2 @ncols2
+int #2 @ncols1-@ncols2
+set autocalc -1
+setring @curring
+kill @curring @r @r'zero @m @map @ncols1 @ncols2 @nvars
+;kill @nrows @ncols
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 10 a-z r
+koszul 3 2 m
+type m
+<rank_prob m n
+type n
+;2
+listvars
+
+random 50 50 m
+<rank_prob m n
+type n
+; 50  takes about 1 minute
+
+set timer 1
+set prlevel -1
+random 100 50 m
+<rank_prob m n
+type n
+
+random 50 100 m
+<rank_prob m n
+type n

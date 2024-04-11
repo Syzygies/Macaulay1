@@ -1,0 +1,56 @@
+incr-set prlevel 1
+if #0>0 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<mult_ideals i1 .. in i
+;;;
+;;; sets i equal to the product of the ideals i1 .. in.
+;;; If there is only one argument, it is set to be the unit ideal.
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;     i1 .. in  = ideals
+;;; Output values:
+;;;     i = ideal
+; created 11/17/89
+START:
+int @last #0
+int @n #0-1
+;intialize
+<ideal @i 1
+<ideal @j
+
+loop:
+if @n=0 finish
+
+transpose #(@n) @j
+mult @j @i @i
+flatten @i @i
+
+int @n @n-1
+jump loop
+
+finish:
+copy @i #@last
+kill @n @i @j @last
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 3 a-z r
+<ideal m1 a b
+<ideal m2 c
+<ideal m3 b c
+<mult_ideals I
+type I
+<mult_ideals m1 I
+type I
+<mult_ideals m1 m2 I
+type I
+<mult_ideals m1 m3 I
+type I
+<mult_ideals m1 m2 m3 I
+type I
+listvars

@@ -1,0 +1,208 @@
+incr-set prlevel 1
+if #0>1 START
+incr-set prlevel -1
+;;; Usage:
+;;;     <points pointsmat result [ mults ]
+;;;
+;;; Computes the ideal of a set of points specified
+;;; in the matrix pointsmat,optionally with multiplicities specified 
+;;; as the degrees of the generators of the ideal mults.
+;;; Example of a pointsmat for 3 points in the line
+;;;     0 1 1
+;;;     1 1 0
+;;; Example of a suitable matrix for mults:
+;;;     a5 a7 1
+;;; (the last 1 means that the final point will not be used.)
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;		pointsmat = (r+1) x n matrix of scalars to
+;;;					specify n points in Pr.
+;;;     mults = 1 x n matrix of polynomials, whose degrees are taken as 
+;;;                 the multiplicities. If there is no third argument,
+;;;                 all multiplicities are assumed 1.
+;;; Output values:
+;;;		result = intersection of the ideals of the points 
+;;;              raised to the powers equal to the multiplicities.
+;;; 
+;;; It is assumed that the ring over which pointsmat
+;;; is defined has at least r+1 variables.  If
+;;; the number of variables is >r+1, the first
+;;; r+1 are used.
+;Created 3/4/89 by D.Eisenbud. Modified to include mults 11/10/89 DE
+START:
+
+;Initialize
+;initialize the answer to the identity ideal
+<ideal #2 1
+
+;The number of points--
+ncols #1 @ncols
+ncols #1 @n
+
+;The number of variables, and a list of these--
+nrows #1 @r1
+<getvars @vars
+submat @vars @vars
+        1
+        1..@r1
+submat @vars @firstvar
+        1
+        1
+
+;Test whether there's anything to do
+if @n=0 cleanup
+
+;decide whether there is a "mults" argument present,
+;and if not create one:
+if #0=3 had_mults
+<ideal @ones 1 1
+power @ones (@n)-1 @ones
+mult @firstvar @ones @mults
+kill @ones 
+;it's necessary to kill here because of branching
+
+jump start
+
+had_mults:
+copy #3 @mults
+
+start:
+
+;get the @nth point from the pointsmat
+submat #1 @point
+        1..@r1
+        @n
+
+;find its equations
+transpose @point @point
+res @point @eqn 2
+mult @vars @eqn.2 @eqn
+
+;raise the ideal to the power given by the degree of 
+;the @nth entry of mult
+submat @mults @currdegree
+1
+@n
+transpose @currdegree @currdegree
+min @currdegree @currdegree
+int @currdegree -@currdegree
+power @eqn @currdegree @eqn
+
+intersect #2 @eqn #2
+;decrement @n
+int @temp @n-1
+int @n @temp
+
+;Test whether we're done
+if @n start
+cleanup:
+kill @ncols @r1 @vars @point @currdegree 
+kill @eqn @temp @n @mults @firstvar 
+END:
+incr-set prlevel -1
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 3 a-z r
+
+;A single point:
+mat p1
+3
+1
+1
+0
+0
+<points p1 e
+type e
+
+<ideal mult 1
+<points p1 e mult 
+type e
+listvars
+
+<ideal mult a
+<points p1 e mult 
+type e
+
+<ideal mult a2
+<points p1 e mult 
+type e
+; 
+listvars
+
+
+;The coordinate points in P5 (Gorenstein):
+<ring 6 a-z r
+mat p5
+6
+7
+1
+0
+0
+0
+0
+0
+
+0
+1
+0
+0
+0
+0
+
+0
+0
+1
+0
+0
+0
+
+0
+0
+0
+1
+0
+0
+
+0
+0
+0
+0
+1
+0
+
+0
+0
+0
+0
+0
+1
+
+1
+1
+1
+1
+1
+1
+type p5
+; 1 0 0 0 0 0 1
+; 0 1 0 0 0 0 1
+; 0 0 1 0 0 0 1
+; 0 0 0 1 0 0 1
+; 0 0 0 0 1 0 1
+; 0 0 0 0 0 1 1
+
+<points p5 e
+type e
+<ideal mults a a a a a a a
+<points p5 e mults
+type e
+;Time about 3 seconds
+res e w
+betti w
+; total:      1    14    35    35    14     1
+; --------------------------------------------
+;     0:      1     -     -     -     -     -
+;     1:      -    14    35    35    14     -
+;     2:      -     -     -     -     -     1
+

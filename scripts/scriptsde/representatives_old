@@ -1,0 +1,54 @@
+incr-set prlevel 1
+if #0=3 START
+incr-set prlevel -1
+;;; Usage:
+;;; <representatives a b result
+;;;
+;;; computes a minimal set of representatives for the
+;;; image of a modulo the image of b.
+;;; That is, if a and b are regarded as maps to
+;;; a free module F, then result is a map to
+;;; F whose columns correspond to a minimal set
+;;; of generators of (im a  +  im b)/(im b). 
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;		a, b matrices with the same target (row space).
+;;; Output values:
+;;;		result = matrix with the same target as a,b.
+;;;
+
+; created 3/3/89 David Eisenbud; Rev 8/14/89 DE
+;Rev 12/30/89 DE
+START:
+modulo #1 #2 @relns
+<complement @relns @comp
+mult #1 @comp #3
+
+kill @relns @comp
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 4 a-z r
+<ideal i a+b+c+d a4+d4
+power r 2 m2
+concat i m2
+<representatives
+<representatives r i reps
+type reps
+
+<ring 1 a s
+<ideal i1 a
+<ideal i2 a a
+<representatives i2 i1 j
+type j
+;
+
+<ring 5 a-z r
+power r 4 r3
+<powers r 3 powers
+<representatives r3 powers m
+;11.75 sec
+betti r3
+betti m

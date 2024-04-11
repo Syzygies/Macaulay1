@@ -1,0 +1,170 @@
+incr-set prlevel 1
+if #0=3 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<k3carpet A B i
+;;;
+;;; Constructs the ideal i of a k3 carpet of sectional
+;;; genus  
+;;;     (ncols A)+(ncols B)+1 
+;;; from disjoint 2-rowed 
+;;; catalecticant matrices A,B. The hyperplane sections are
+;;; all the ribbons with 
+;;; clifford index = min (ncols A, ncols B).
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;	    A, B 2xa and 2xb matrices.  must have a,b >=2.
+;;; Output values:
+;;;	    i = ideal of minors of A, minors of B, and
+;;; differences of 2x2 minors of the concatenated 
+;;; matrix A|B of the form 
+;;; |i j+1|-|i+1 j|
+;;; where |m n| denotes the minor involving the 
+;;; mth col of A and the nth col of B.
+;;; 
+;;; In the case where A and B are disjoint catalecticant
+;;; matrices, with 2 <= a <= b columns respectively,
+;;; the ideal i is the ideal of a k3 carpet
+;;; of sectional genus g = a+b+1 and clifford index a
+;;; (that is, Gorenstein, codim g-2 in Pg, and 
+;;; -- conjecturally -- with a resolution having 
+;;; 2-linear strand ending in the bth place.
+;;;
+;;; Caveats:
+;;;      a,b must be >=2.
+; created 8/7/89 DE
+START:
+
+ncols #1 @a
+ncols #2 @b
+if @a<2 badend
+if @b<2 badend
+
+wedge #1 2 #3
+wedge #2 2 @i2
+concat #3 @i2
+
+copy #1 @tot
+concat @tot #2
+
+;initialize loop
+int @x 1
+<ideal @i3  ;empty
+
+outerloop:
+int @y 1
+
+innerloop:
+submat @tot @outerminor
+;both rows
+@x @a+@y+1
+submat @tot @innerminor
+;both rows
+@x+1 @a+@y
+wedge @outerminor 2 @outerminor
+wedge @innerminor 2 @innerminor
+subtract @outerminor @innerminor @difference
+concat @i3 @difference
+int @y @y+1
+if @y=@b incrementx
+jump innerloop
+incrementx:
+int @x @x+1
+if @x=@a donewithi3
+jump outerloop
+
+donewithi3:
+concat #3 @i3
+
+kill @a @b @x @y @i2 @i3 @tot
+kill @outerminor @innerminor @difference
+jump END
+
+badend:
+kill @a @b
+shout echo matrices must have at least 2 cols
+
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+;for this to work the following integers must
+;be >=2
+int a 5
+int b 5
+<ring a+1 x[0]-x[a] r1
+<ring b+1 y[0]-y[b] r2
+ring-sum r1 r2 r
+cat x[0] A
+0 1
+0..a-1
+cat y[0] B
+0 1
+0..b-1
+type A
+type B
+
+<k3carpet A B i
+
+set autocalc 1
+set autodegree 2
+res i ii 
+betti ii
+;should - and does - show the last linear term
+;in the bth place.  Note that the codim is a+b-1
+;and the degree is 2(a+b) = 2(g-1).
+degree ii.1
+set autocalc -1
+
+
+type i
+std i i
+degree i
+in i ii
+<radical ii iir
+
+copy i j
+<ideal params x[a] y[0] x[0]-y[b] 
+concat j params
+std j j
+degree j
+in j
+type params
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+;try some non-catalecticant matrices:
+;for this to work the following integers must
+;be >=2
+int a 3
+int b 3
+<ring 2*a x[1]-x[2*a] r1
+<ring 2*b y[1]-y[2*b] r2
+ring-sum r1 r2 r
+
+<generic_mat x[1] 2 a A
+<generic_mat y[1] 2 b B
+
+type A
+type B
+
+<k3carpet A B i
+
+set autocalc 1
+set autodegree 2
+res i ii 
+betti ii
+
+; total:      1    10    47    88    65    28    16     3 
+; --------------------------------------------------------
+;     0:      1     -     -     -     -     -     -     - 
+;     1:      -    10     8     -     -     -     -     - 
+;     2:      -     -    39    88    65     -     -     - 
+;     3:      -     -     -     -     -    28    16     3 
+
+% degree ii.1
+; codimension : 5
+; degree      : 6

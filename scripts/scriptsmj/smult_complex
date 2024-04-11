@@ -1,0 +1,73 @@
+incr_set prlevel 1
+if #0=7 START
+incr_set prlevel -1
+;;; Usage:
+;;; 	<smult_complex w w1 w2 p d d1 d2
+;;;
+;;; An element of the ring p induces an
+;;; endomorphism of the complex w w1 w2.
+;;; smult_complex constructs the array
+;;; of matrices giving this endomorphism.
+;;;
+incr_set prlevel 1
+jump END
+;;; Parameters: (w,w1,w2) - an array of
+;;;		matrices which form a
+;;;		complex.
+;;;	p - a polynomial
+;;;
+;;; Output values: (d,d1,d2) - an array
+;;;		of matrices giving the
+;;;		maps of the endomorphism.
+;;;
+;;;  The Array of Matrices Data Type:
+;;;
+;;; An array of matrices is a triple (M,v1,v2) of matrices.
+;;; The first coordinate is a direct sum of matrices such
+;;; that the upper left hand corner is thought of as the
+;;; first matrix, and so on.
+;;;
+;;; The second coordinate is an n by 0 matrix whose row
+;;; degrees give the ranks of the free modules which are
+;;; the sources of the maps.
+;;;
+;;; The third coordinate is an n by 0 matrix whose row de-
+;;; grees give the ranks of the free modules which are the
+;;; targets of the maps.
+;;;
+; created ... 6/29/92 by M. Johnson
+START:
+
+	int @i 1
+	nrows #3 @length
+	mat #5
+		0
+		0
+	mat #6
+		0
+		0
+	mat #7
+		0
+		0
+
+	LOOP:
+		row_degree #3 @i @rk
+		iden @rk @M
+		smult @M {#4} @M
+		<add_matrix_to_array #5 #6 #7 @M
+		int @i @i+1
+		if @i<@length+1 LOOP
+
+	row_degree #2 @i-1 @rk
+	iden @rk @M
+	smult @M {#4} @M
+	<add_matrix_to_array #5 #6 #7 @M
+
+kill @M @rk @i @length
+END:
+incr_set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+

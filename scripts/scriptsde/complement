@@ -1,0 +1,132 @@
+incr-set prlevel 1
+if #0=2 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;; 	<complement submodule complement
+;;;
+;;; Given a submodule of a free module, the script computes
+;;; a minimal summand of the free module such that with the
+;;; submodule, the summand generates the free module.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		submodule = matrix whose image is the submodule
+;;; Output values:
+;;;		complement = matrix of a split mono whose image
+;;;						is the complement
+;Created 2/19/89 DE
+START:
+
+;Make a map setting the variables of the current ring to 0:
+<getvars zero@
+subtract zero@ zero@ zero@
+
+;reduce submodule mod S+
+ev zero@ #1 submod@
+
+;compute the kernel of the transpose of the reduced a
+transpose submod@ submod@
+res submod@ submod@ 2
+
+;and split its transpose.
+;This will give us a minimimal set of generators
+;of the cokernel of submodule.
+transpose submod@.2 #2
+<idenrowdegs #2 Id@
+lift-std #2 #2
+lift #2 Id@ #2
+
+kill submod@ Id@ zero@
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 8 a-z r
+
+mat a
+2
+2
+1
+a
+b
+c2
+type a
+setdegs a
+1 0
+;
+type a
+<complement
+<complement a b
+type b
+listvars
+
+iden 2 a
+type a
+<prune a b
+type b
+
+mat zero
+1
+1
+0
+
+set prlevel 0
+<prune zero b
+type b
+betti b
+betti zero
+; ;;;;;;;;;;;;;;;;;;;;;;;
+reset
+mat a
+2
+2
+1
+a
+b
+c2
+type a
+setdegs a
+1 0
+;
+<prune a b
+type b
+listvars
+
+iden 2 a
+type a
+<prune a b
+type b
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 4 a-z r
+
+ mat i
+1
+1
+(1,1) = a
+
+cat a m
+0
+0..3
+set prlevel 0
+
+<ext 2 m i e
+set prlevel -2
+
+<prune e f
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 2 a-z r
+
+mat test
+! number of rows    = 2
+! number of columns = 1
+! (1,1) = 1
+! (2,1) = 0
+betti test
+set prlevel -1
+
+% <complement test test1
+type test1

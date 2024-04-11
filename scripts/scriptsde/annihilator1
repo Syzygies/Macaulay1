@@ -1,0 +1,167 @@
+incr-set prlevel 1
+if #0=2 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;;     <annihilator1 X ann_X
+;;;
+;;; computes the annihilator by calling "quotient"
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		X = a module
+;;;
+;;; Output values:
+;;;		ann_X = its annihilator, as an ideal with standard
+;;;		basis.
+;;;
+;;; This script essentially computes the intersection
+;;; of the annihilators of all the generators of X.
+;;; A different method -- sometimes faster, sometimes
+;;; slower -- is used by "<annihilator2
+;;;
+;Created 2/89 DE
+START:
+
+<idenrowdegs #1 i@
+quotient #1 i@ #2
+
+kill i@
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+;In these two examples, annihilator2 is much faster:
+<ring 4 a-z rr
+
+iden 10 ID
+smult ID a X
+;set prlevel -1
+<annihilator1
+<annihilator1 X ann_X
+type ann_X
+<annihilator2 X ann2_X
+type ann2_X
+<annihilator X ann4_X
+type ann4_X
+
+
+; ;;;;;;;;;;;;;;;
+;over a qring:
+<ring 4 a-z rr
+<ideal i a2-bc
+std i i
+qring i rr
+iden 10 ID
+smult ID a X
+;set prlevel -1
+<annihilator1 X ann_X
+type ann_X
+<annihilator2 X ann2_X
+type ann2_X
+std ann2_X j
+type j
+<annihilator X ann4_X
+type ann4_X
+
+
+
+
+
+cat a n
+0 1
+0..3
+
+type n
+<annihilator1 n ann
+type ann
+<annihilator2 n ann
+type ann
+<annihilator n ann
+type ann
+
+mat m
+3
+3
+a3
+b2
+c
+c7
+a6+abc4
+b5+c5
+d4
+d2a
+b2+c2
+setdegs m
+        0 1 2
+        ;
+<annihilator1 m ann_m
+type ann_m
+<annihilator2 m ann_m
+type ann_m
+<annihilator m ann_m
+type ann_m
+
+mat p
+2
+2
+a
+b3
+c4
+d6
+setdegs p
+2 0
+;
+<annihilator1 p ann_p
+type ann_p
+<annihilator2 p ann_p
+type ann_p
+<annihilator p ann_p
+type ann_p
+
+reset
+<ring 49 x[1,1]-x[7,7] r
+<generic_mat x[1,1] 6 6 m
+type m
+set timer 1
+set prlevel -1
+<annihilator1 m ann_m
+;type ann_m
+<annihilator2 m ann2_m
+;type ann2_m
+copy ann2_m z
+
+
+<annihilator m ann4_m
+;type ann4_m
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+<ring 9 a-z r
+
+cat a catal
+0..4
+0..4
+type catal
+
+set timer 1
+set prlevel -2
+<annihilator1 catal ann
+type ann
+<annihilator2 catal ann2
+type ann2
+<annihilator3 catal ann3
+type ann3
+<annihilator catal ann4
+type ann4
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 1 a r
+<ideal i 1
+<annihilator1 i j
+type j
+std i ii
+type ii
+
+type j

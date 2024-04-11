@@ -1,0 +1,70 @@
+incr-set prlevel 1
+if #0>=1 START
+incr-set prlevel -1
+;;; Usage:
+;;;      <stack newmat mat1 .. matn
+;;;
+;;;    Creates a matrix newmat with rows the rows of mat1 ... matn 
+;;; in order.  The prgram transposes each argument, and then uses
+;;; concat, whose idiosyncrasies it thus shares (but it does NOT write
+;;; over any of its arguments unless asked to.) If only one argument
+;;; is given, it is set to the 0x0 matrix.
+;;; 	After newmat is created, setdegs is used to adjust the 
+;;; column degrees to whatever the row degrees are.  This is done
+;;; because if mat1 has some columns of zeros, then newmat would 
+;;; otherwise be inhomogeneous. Care should be taken, however.
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;       mat1 .. matn matrices
+;;; Output values:
+;;;       newmat a matrix
+;;;
+; created 12/9/90 DE
+START:
+if #0>1 real_case
+mat #1
+	0
+	0
+jump END
+
+
+real_case:
+transpose #2 @m
+int @i 1
+
+loop:
+int @i @i+1
+if @i>=#0 endloop
+transpose #(@i+1) @mtemp
+concat @m @mtemp
+jump loop
+
+endloop:
+transpose @m @m
+
+;The following keeps the row degrees of @m, but not necessarily the 
+;column degrees
+setdegs @m
+	@m
+	;
+copy @m #1
+kill @m @mtemp @i
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 3 a-z r
+<ideal i1 0 b c2
+<ideal i2 a b 0
+<stack
+<stack m
+type m
+betti m
+
+set prlevel 0
+<stack m i1 i2
+type m
+betti m
+

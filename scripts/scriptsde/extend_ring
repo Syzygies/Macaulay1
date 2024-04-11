@@ -1,0 +1,255 @@
+incr-set prlevel 1
+if #0=3 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;; 	<extend_ring J x S
+;;;
+;;; Computes an approximation S to the smallest 
+;;; subring S' of the total quotient ring of R.
+;;; the base ring of J, having
+;;; depth J S' >= 2.  In certain cases this is 
+;;; 	\sum_n  H^0( O_X (n) ),
+;;; where X is the projective variety defined by the
+;;; base ring of j --- see below.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;; 	J = ideal in the ambient ring with respect
+;;;			to which the 0 th local cohom is being
+;;;			computed.
+;;;		x = the name of the new variables to use
+;;;			in defining S; MUST NOT CONFLICT WITH
+;;;			THE NAMES OF VARIABLES IN THE BASE RING
+;;;			OF J.
+;;;		
+;;; Output values:
+;;;
+;;; S = R[ x[1], x[2], ... ]/K,
+;;; where R is the base ring of J and K is an ideal.
+;;; 
+;;; The base ring R of J may be a quotient ring.
+;;; The natural map f from R to S may be found by using
+;;;		<imap f J S
+;;; 		;
+;;; The ring generated over R by the fractional
+;;; ideal Hom(J,R) is computed, under the
+;;; assumption that the first generator of
+;;; J given is a nonzerodivisor on R
+;;; (use NZD to check this.)  S is set
+;;; equal to this new ring. S is created for
+;;; this purpose, using variables named
+;;; x[1]..x[n], where n is the number of
+;;; variables in R + the number of generators
+;;; computed for Hom(J,R). 
+;;;
+;;; If J is primary to the maximal ideal,
+;;; then S is a subring of
+;;; \sum H^0( O_X (m) ),
+;;; where X is the projective variety corresponding
+;;; to R -- the part annihilated by J mod R.
+;;; If in addition J annihilates
+;;; the first local cohomology
+;;; of R, and in particular if R (nvars R)-1
+;;; + the degrees of the generators of J
+;;; are all >= the largest degree
+;;; occurring in the resolution
+;;; of R at the (nvars R)-1 th step, then
+;;; Hom(J, R) is the whole of this ring.
+; Last modified April 27, 1989, DE.
+START:
+
+;Make sure that the row degree of J is zero:
+copy #1 J@
+setdegs J@
+	;
+	;
+	
+;Extract the first generator multiplier@ of J,
+;assumed to be a nzd on R:
+submat J@ multiplier@
+rows?1
+cols?1
+;Now compute Hom(J,R)
+res J@ J@ 2
+transpose J@.2 g@
+res g@ g@ 2
+
+;The first row of the presentation matrix
+;g@.2 for hom is the result of evaluating
+;the homomorphisms on the first generator of J:
+submat g@.2 g@
+rows?1
+cols?;all
+
+;The coldegs of g are the degrees of the homomorphisms.
+;One of these homomorphisms,  the only one of
+;degree <= 0 in the absolutely irreducible case,
+;is the identity, whose image on the first generator of
+;J is itself.  We use <complement to eliminate this one:
+
+;shift degrees to make the column degree of multiplier@
+;be 0:
+col_degree multiplier@ 1 jdeg@
+setdegs multiplier@
+	-jdeg@
+	0
+
+set autocalc 1
+set autodegree 0
+lift-std g@ g@
+set autocalc -1
+
+lift g@.1 multiplier@ identity@
+<complement identity@ h@
+mult g@.1 h@ g@
+;Now g@ is the row of images of the first gen of J
+;under the maps to R other than the identity.
+
+
+;REPORT DEGREES OF NEW GENERATORS:
+col-degs g@ report@
+shout echo The row degrees of the following matrix
+shout echo are the degrees of the new generators to be added.
+shout echo If there are any nonpositive then the input ring is
+shout echo not absolutely irreducible and the computation
+shout echo would yield yield a spurious answer, and will thus
+shout echo be aborted:
+shout betti report@
+
+;Check to see if the minimal degree was negative,
+;or if there were no new homomorphisms,
+;and jump to finish in these cases:
+min report@ mindeg@
+if mindeg@<0 cleanup
+ncols g@ num_new@
+if num_new@=0 nothing_new
+
+;Construct a polynomial ring S@ over R
+;with new variables x[i] corresponding to 
+;the homomorphisms other than the identity:
+ring-from-cols g@ S@
+	#(2)[1]-#(2)[num_new@]
+ring-sum #1 S@ S@ 
+
+;Give multiplier@ and g@ their natural degrees as ideals:
+setdegs multiplier@
+	0
+	;
+setdegs g@
+	0
+	;
+setring S@
+<adjoin_fractions multiplier@ g@ K@
+
+std K@ K@
+qring K@ #3
+
+jump cleanup
+
+nothing_new:
+;In this case set S to the base ring of J
+<getvars #1 R@
+copy R@ #3
+
+cleanup:
+
+kill multiplier@ jdeg@ J@ 
+kill S@'zero S@ K@ num_new@ mindeg@ identity@ h@ g@ report@
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+;Normalization in P4 of the smooth rational quartic in P3
+reset
+
+;Form the coordinate ring R of the quartic:
+<ring 4 a-d s
+<monomial_curve 1 3 4 i
+std i i
+qring i R
+
+;Next make a test ideal j:
+<powers R 2 j
+
+<extend_ring
+<extend_ring j x S
+present-ring S K
+
+;Note that K is an ideal in a polynomial ring over R,
+;which is not itself a polynomial ring.  In fact, the
+;number of minimal generators of K is only 5, since
+;one of the quadrics in the ideal is 0 in R!  We can
+;get everything up to a polynomial ring to look at it as
+;follows:
+
+present-ring K L
+setring L
+fetch K K1
+concat L K1
+nres L L
+betti L
+; --------------------------------
+;     0:      1     -     -     - 
+;     1:      -     6     8     3 
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;The ideal of a smooth rational quintic in P3:
+<ring 4 a-d s
+<monomial_curve 1 4 5 i
+std i i
+qring i R
+
+;Next make a test ideal j:
+<powers R 4 j
+
+<extend_ring j x S
+present-ring S K
+
+;Note that K is an ideal in a polynomial ring over R,
+;which is not itself a polynomial ring.  We can
+;get everything up to a polynomial ring to look at it as
+;follows:
+
+present-ring K L
+setring L
+fetch K K1
+concat L K1
+nres L L
+betti L
+hilb L.1
+; total:      1    10    20    15     4 
+; --------------------------------------
+;     0:      1     -     -     -     - 
+;     1:      -    10    20    15     4 
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;The ideal of an (arith genus 2) rational quintic 
+;(2 ordinary cusps):
+
+;extend_ring gives a warning in this
+;case, essentially because there's nothing to add.
+
+<ring 4 a-d s
+<monomial_curve 1 3 5 i
+std i i
+qring i R
+
+;Next make a test ideal j:
+<powers R 4 j
+
+<extend_ring j x S
+present-ring S K
+
+;Note that K is an ideal in a polynomial ring over R,
+;which is not itself a polynomial ring.  We can
+;get everything up to a polynomial ring to look at it as
+;follows:
+
+present-ring K L
+setring L
+fetch K K1
+concat L K1
+nres L L
+betti L

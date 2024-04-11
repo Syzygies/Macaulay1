@@ -1,0 +1,124 @@
+incr-set prlevel 1
+if #0=4 START 
+incr-set prlevel -1
+;;; Usage:
+;;; 	<double_dual1 M A N f
+;;;
+;;; N is set equal to the double dual into A,
+;;; Hom(M,Hom (M, A)).  f is set to the natural map from
+;;; M to N (that is, from the free module giving
+;;; the generators of M to the one giving the generators
+;;; of N.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		M,A modules
+;;; Output values:
+;;;		N = Hom(M,Hom (M, A))
+;;;		f : M --> N the natural map
+;;;
+;;; The A-torsion submodule of M (=the intersection
+;;; of the kernels of all maps from M to A)
+;;; is the kernel of the map f;
+;;; it can be computed by a call of the form
+;;; 	<kernel f M N Atorsion
+;;; 	type Atorsion
+;;;
+;;; In case A is the ring over which M is defined, use
+;;; <double_dual instead (note that A does not appear in the
+;;; argument list of <double_dual)
+;;;
+;;; Explanation:
+;;;
+;;; (Notation:  Let
+;;;     m: GM /to FM          be a presentation of M.
+;;;     a: GA /to FA          be a presentation of A.
+;;; ma: ** \to FMA   be a presentation of (M,A) -- that is, Hom(M,A)
+;;; N = maa: ** \to FMAA be a presentation of ((M,A),A).
+;;; f_ma: FMA \to (FM,FA) be the map inducing the natural (M,A) \to (FM,A)
+;;; f_maa: FMAA \to (FMA,FA) be the map inducing the natural map
+;;;                       ((M,A),A) to (FMA,A)
+;;; taut: FM \to ((FM,FA),FA) be the tautological map.)
+;;; T the map (f_ma^* \tensor FA)
+;;; The desired map f is then the map FM \to FMAA obtained by lifting the
+;;; composite s = (T)(taut) along f_maa.
+;Created 3/29/89 by D.Eisenbud
+START:
+
+;First the double dual N=#3, with f_ma and f_maa
+<hom_and_map #1 #2 @ma @f_ma
+<hom_and_map @ma #2 #3 @f_maa
+
+;Next Make T
+<idenrowdegs #2 @FA
+transpose @f_ma @f_ma'
+outer @f_ma' @FA @T
+
+;Make taut:
+<idenrowdegs #1 @FM
+flatten @FA @taut
+transpose @taut @taut
+outer @FM @taut @taut
+
+;Compute f:
+mult @T @taut @s
+lift-std @f_maa @f_maa
+lift @f_maa @s #4
+
+kill @f_ma @ma @FA @T @f_ma' @FM @taut @s @f_maa 
+
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+
+<ring 4 a-z r
+<ideal R 0
+
+;something torsion: double dual = 0
+<ideal m1 a
+<double_dual m1 n1 f1
+type n1
+type f1
+<kernel f1 m1 n1 tors1
+type tors1
+
+<double_dual1
+<double_dual1 m1 R nn1 ff1
+type nn1
+type ff1
+
+listvars
+; ;;;;;;;;;;;;;;;;;;;;
+
+;something with double dual free of rank 1
+ideal m2
+2
+a
+b
+transpose m2 m2
+<double_dual m2 n2 f2
+
+type n2
+betti n2
+type f2
+
+<double_dual1 m2 R nn2 ff2
+type nn2
+betti nn2
+type ff2
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;something reflexive
+<ideal m3 a b c
+transpose m3 m3
+<double_dual m3 n3 f3
+type n3
+type f3
+
+<double_dual1 m3 R nn3 ff3
+type nn3
+type ff3

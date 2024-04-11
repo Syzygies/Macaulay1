@@ -1,0 +1,87 @@
+incr-set prlevel 1
+if #0=2 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;;     <kosz_hom1 i m
+;;;
+;;; The i-th koszul homology group of "m" is computed up
+;;; to degree 0, and displayed.
+;;; Thus the answer corresponds to the linear part of
+;;; the resolution at step k.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		i = integer >0
+;;; 	m = module
+;;; Displayed value:
+;;;	    the dimension of the ith koszul homology in degrees <= i
+;;;            (if m is generated in degrees >=0, 
+;;;             then there is nothing of degree <0)
+;;;
+;;; Setting i = 1 gives the vectorspace
+;;; of linear relations, etc. 
+;;; 
+;;; The answer doesn't mean much unless the module 
+;;; is generated in degree >=0.
+;Created 2/89 DE; last modified 5/14/89 DE
+START:
+
+set autocalc 1
+set autodegree 0
+
+nvars #2 N@
+koszul N@ #1 kn@
+
+setdegs kn@
+-1
+;
+
+<idenrowdegs #2 A0
+<idenrowdegs kn@ wedgenminus1@
+<idencoldegs kn@ wedgen@
+
+outer A0 kn@ fn@
+
+outer #2 wedgen@ a@
+;For the degree 0 purposes, a@ is irrelevant!
+subtract a@ a@ a@
+
+outer #2 wedgenminus1@ b@
+
+modulo fn@ b@ kh@
+ncols kh@ koszul_homology@
+
+shout type koszul_homology@
+
+kill kn@  N@ koszul_homology@
+kill A0 wedgenminus1@ wedgen@
+kill fn@ kh@
+kill a@ b@
+
+set autocalc -1
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 3 a-z r
+power r 2 i
+res i i 2
+setdegs i.2
+;
+;
+
+<kosz_hom1
+<kosz_hom1 2 i.2
+; 3
+;This means that the ideal i, presented by the matrix i.2,
+;has 3 linear second syzygies, as shown by the following display:
+
+res i.2 res
+betti res
+; total:      6     8     3 
+; --------------------------
+;     0:      6     8     3 
+listvars

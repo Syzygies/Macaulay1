@@ -1,0 +1,232 @@
+incr-set prlevel 1
+if #0=3 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<unmixed_radical2 I I1 reg
+;;;
+;;; Sets I1 = the intersection of the primes of 
+;;; minimal height containing an ideal I
+;;; in a polynomial ring, by the 
+;;; method of VASCONCELOS, using an auxilliary 
+;;; maximal regular
+;;; sequence in I called reg.
+;;;
+;;; Unless one knows in advance that I 
+;;; is unmixed, one should do
+;;; <remove_low_dim I I
+;;; (which runs relatively fast)
+;;; before using this script.
+;;;
+;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;         I an ideal
+;;;         reg  a maximal regular sequence in I
+;;; Output values:
+;;;          I1 an ideal, reduced and equal to the
+;;;          radical of I along the components of
+;;;          I of maximal dimension.
+;;;     Method:
+;;;  1.  Compute the maximal minors Jreg of the jacobian
+;;; matrix of the regular sequence reg.
+;;;  3.  The radical of reg is reg:Jreg =: K
+;;;  4.  The unmixed radical of I is 
+;;;       (K:(K:I))
+;;;
+;;; Caveats: This method doesn't work if
+;;; we start in a factor ring.  Does it work if
+;;; the variables have different weights?
+;;;
+;;; The script is limited by Macaulay's current
+;;; limitation to 10x10 or smaller minors.  Thus
+;;; one cannot even try to compute the radical of 
+;;; an ideal of codimension >10, though this
+;;; probably wouldn't be realistic anyway.
+;;;
+; created 5/1/90 DE
+START:
+;Get a means of returning to the original ring:
+setring #1
+<getvars @oldvars
+nvars #1 @nvars
+
+;move to a ring with just one block
+;of variables:
+<copyring a @r 
+setring @r
+ev @r #1 @I
+
+;compute the codim of I
+std @I @I
+<codim @I @codimI
+;Handle the case that I is the unit ideal:
+;(there will be some "variable .. doesn't exist" messages.)
+if @codimI>@nvars end1
+ 
+ 
+if #0=3 continue
+;Get a regular sequence if none is given, and call it
+;@reg
+jump continue1
+continue:
+ev @r #3 @reg
+continue1:
+
+;Compute the Jacobian ideal:
+jacob @reg @Jreg
+wedge @Jreg @codimI @Jreg
+flatten @Jreg @Jreg
+
+;Find the radical of the complete intersection:
+quotient @reg @Jreg @K
+
+;Find the unmixed radical of I
+quotient @K @I @temp
+quotient @K @temp @I1
+
+end1:
+
+;Move the answer back to the original ring:
+ev @oldvars @I1 #2
+
+kill @r'zero @r @codimI @I @reg @Jreg @K @temp @I1 
+kill @oldvars @nvars   
+
+END:
+incr-set prlevel -1
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 3 a-z r
+<ideal i a4 
+<ideal regular a20
+<unmixed_radical2 i j regular
+type j
+;a
+listvars
+
+; ;;;;;;;;;;;;;;;
+<ring 4 a-z r
+<ideal ia a b 
+power ia 3 ia3
+<ideal ic c d 
+power ic 2 ic2
+intersect ia3 ic2 i
+betti i
+<random_mat 1 2 i regular
+<unmixed_radical i j 
+type j
+; ad bd ac bc 
+
+;6 sec
+
+<ideal regular a3c3 b3d3
+<unmixed_radical2 i j regular
+type j
+;1 sec
+
+<random_mat 1 2 i regular
+<unmixed_radical2 i j regular
+type j
+;3.5 minutes
+
+
+; ;;;;;;;;;;;;;;;;;;;;;
+<ring 3 a-z r
+power r 3 r3
+<unmixed_radical r3 j
+type j
+;a b c
+
+<ideal reg a3 b3 c3
+<unmixed_radical2 r3 j reg
+type j
+
+<random_mat 1 3 r3 reg
+<unmixed_radical2 r3 j reg
+type j
+;This one is still better than unmixed_radical
+; ;;;;;;;;;;;;;;;;;
+
+<ring 5 a-z r
+;ideal i
+;3
+;a5+b5+c5+d5+e5-5abcde
+;ea3b+ab3c+bc3d+cd3e+de3a
+;e2ab2+a2bc2+b2cd2+c2de2+d2ea2
+;std i i
+;codim i
+;2
+;<remove_low_dim i i1
+;betti i1
+;set prcomment -1
+;putmat i1
+;set prcomment 1
+mat i1
+1
+8
+a2bc2+b2cd2+a2d2e+ab2e2+c2de2
+ab3c+bc3d+a3be+cd3e+ade3
+a5+b5+c5+d5-5abcde+e5
+ab2c4-b5cd-a2b3de+2abc2d2e+ad4e2-a2bce3-cde5
+abc5-b4c2d-2a2b2cde+ac3d2e-a4de2+bcd2e3+abe5
+a4b2c-abc2d3-ab5e-b3c2de-ad5e+2a2bcde2+cd2e4
+a3b2cd-bc2d4+ab2c3e-b5de-d6e+3abcd2e2-a2be4-de6
+b6c+bc6+a2b4e-3ab2c2de+c4d2e-a3cde2-abd3e2+bce5
+;set prlevel -1
+;set timer 1
+<unmixed_radical i1 j verbose
+;About 75 sec
+betti j
+; total:      1     8 
+; --------------------
+;     0:      1     - 
+;     1:      -     - 
+;     2:      -     - 
+;     3:      -     - 
+;     4:      -     3 
+;     5:      -     - 
+;     6:      -     5 
+
+<ideal reg a2bc2+b2cd2+a2d2e+ab2e2+c2de2 ab3c+bc3d+a3be+cd3e+ade3
+;std reg reg
+;codim reg
+;2
+;set prlevel -1
+;set timer 1
+<unmixed_radical2 i1 j reg
+;38 sec
+betti j
+;Takes MUCH longer if we use the first and last of the 
+;8 generators for the regular sequence!
+
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Varieties in the nilcone of matrices:
+;Nilpotent nxn matrices:
+reset
+int n 3
+<ring n*n a-z r
+<generic_mat a n n M
+mult M M M2
+flatten M2 nilp
+betti nilp
+
+;set prlevel -10
+;set timer 1
+;<radical nilp j verbose
+;n=2 goes fast.  n=3 ran out of memory trying to show that the
+;correct answer (which is already produced by the first 
+;"remove lowest dim) is correct (its the 2x2's with the trace, codim = 5)
+;The program was working on the 4x4 minors; it succeeded in doing
+;a wedge 4 (of the 9x10 Jacobian matrix) in 52 min, but ran out of
+;space on the following "flatten".
+;res j j
+;betti j
+
+<remove_low_dim nilp i
+betti i
+set prlevel -1
+set timer 1
+<regular_sequence1 i reg
+<unmixed_radical2 i j reg

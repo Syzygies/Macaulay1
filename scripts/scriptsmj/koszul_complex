@@ -1,0 +1,69 @@
+incr_set prlevel 1
+if #0=4 START
+incr_set prlevel -1
+;;; Usage:
+;;; 	<koszul_complex B kosz kosz1 kosz2
+;;;
+;;; 	Creates the Koszul complex based upon
+;;;     the elements in the matrix B.  The
+;;;     result is stored in an array of ma-
+;;;     trices.
+;;;
+incr_set prlevel 1
+jump END
+;;; Parameters: B - an 1xn matrix containing
+;;;	the generators on which the complex
+;;;     is to be based.
+;;;
+;;; Output values: (kosz,kosz1,kosz2) an array
+;;;	of matrices which holds the koszul com-
+;;;	plex.
+;;;
+;;; The Array of Matrices Data Type:
+;;;
+;;; An array of matrices is a triple (M,v1,v2) of matrices.
+;;; The first coordinate is a direct sum of matrices such
+;;; that the upper left hand corner is thought of as the
+;;; first matrix, and so on.
+;;;
+;;; The second coordinate is an n by 0 matrix whose row
+;;; degrees give the ranks of the free modules which are
+;;; the sources of the maps.
+;;;
+;;; The third coordinate is an n by 0 matrix whose row de-
+;;; grees give the ranks of the free modules which are the
+;;; targets of the maps.
+;;;
+;;; (This just repeatedly calls the command
+;;;  koszul to generate the matrices individu-
+;;;  ally.  There should also be a similar
+;;;  command for the matrices in any of the
+;;;  Eagon-Northcott type complexes.)
+;;;
+;;;
+; created ... 6/1/92  M. Johnson
+START:
+
+mat #2
+0
+0
+mat #3
+0
+0
+mat #4
+0
+0
+
+ncols #1 @num_gens
+int @i 1
+LOOP:
+	koszul #1 @i @ith_map
+	<add_matrix_to_array #2 #3 #4 @ith_map	
+	int @i @i+1
+	if @i<(@num_gens+1) LOOP
+kill @num_gens @i @ith_map
+
+END:
+incr_set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;

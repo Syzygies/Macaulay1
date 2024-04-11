@@ -1,0 +1,150 @@
+incr-set prlevel 1
+if #0=3 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<diff x m mx
+;;; 
+;;; THIS DOES WHAT diff SHOULD DO.
+;;; Differentiates each element of m with respect to each
+;;; element of the ideal x
+;;; and puts the result in mx.  The column degrees of mx
+;;; are set to be the same as those of m, so that if m is
+;;; a map E --> F, and x is the ideal of variables,
+;;; then mx is the differential.
+;;; E --> \Omega \tensor F 
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;        x 1xn matrix
+;;;        m matrix
+;;; Output values:
+;;;        mx matrix with same number of cols, col degs as m
+;;;
+;;; Comment:  Probably the final version should do the same,
+;;; but allow x to be an arbitrary matrix, and let the
+;;; output have the same shape as x' \tensor m, where x'
+;;; is the transpose of x.  But at the
+;;; moment I don't know any application for this.
+;;;
+;;;
+; created 1/25/90 DE
+START:
+;Gather info on the data:
+ncols #1 @nx
+ncols #2 @ncols
+nrows #2 @nrows
+col-degs #2 @coldegs
+
+;Initialize the transpose of the matrix that will hold the answer (correct degs!)
+mat @mx'
+	@ncols
+	0
+transpose #2 @m'
+setdegs @mx'
+	@m'
+	;
+
+;loop on the cols of x. The jth column is the entry xj:
+int @j 0
+loopj:
+int @j @j+1
+if @j>@nx finish
+submat #1 @xj
+	;
+	@j
+col_degree @xj 1 @dj ;the degree of xj
+
+;Now loop through the rows rowi of m
+int @i 0
+loopi: 
+int @i @i+1
+if @i>@nrows loopj
+submat #2 @rowi
+@i
+;
+
+;Differentiate by xj:
+diff @xj @rowi @rowji
+
+;Fix the degrees:
+dshift @rowi @dj
+setdegs @rowji
+	@rowi
+	@coldegs
+
+;Save the transposed row as the next column of mx'
+transpose @rowji @colji
+concat @mx' @colji
+
+jump loopi
+
+finish:
+transpose @mx' #3
+
+kill @nx @ncols @nrows @coldegs @mx' @m' @dj @xj  
+kill @rowi @rowji @colji @i @j 
+
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+
+<ring 2 xy r
+mat n 
+	2
+	2
+x2
+x
+y3
+xy
+setdegs n
+	0 1
+	;
+type n
+<ideal i x y
+<diff i n nn
+betti n
+; total:      2     2 
+; --------------------
+;     0:      1     - 
+;     1:      1     1 
+;     2:      -     1 
+
+betti nn
+; total:      4     2 
+; --------------------
+;     1:      2     1 
+;     2:      2     1 
+type n
+; x2 y3 
+; x  xy 
+
+type nn
+; 2x 0   
+; 1  y   
+; 0  3y2 
+; 0  x   
+
+listvars
+
+
+; ;;;;;;;;;;;;;;;;;;
+reset
+<ring 3 a-z s
+<ideal i a2 ab b2
+<diff s i j
+type j
+betti i
+betti j
+listvars
+
+; ;;;;;;;;;;;;;;
+<ideal i a2
+<ideal x a
+<diff x i j
+type j
+betti i
+betti j
+
+

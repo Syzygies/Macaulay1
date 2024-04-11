@@ -1,0 +1,139 @@
+incr-set prlevel 1
+if #0=3 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<sym m d result
+;;;
+;;;     Given a matrix m and a positive integer d,
+;;; sets result to the dth symmetric power of m.
+;;;     To get the dth divided power, do
+;;; transpose m m1
+;;; sym m1 d m2
+;;; transpose m2 result
+;;;
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;       m a matrix whose row degrees are either
+;;; all positive or at least all equal (and then
+;;; the degrees of the sym matrix will be wrong).
+;;;       d a non-negative integer
+;;; Output values:
+;;;    result, a mtrix
+;;; result is computed adjoining numrows(m) new
+;;; variables, multiplying the row of vars by m
+;;; and comparing the dth power of the resulting
+;;; ideal with the dth power of the row of variables.
+;;;
+;;; Caveats:
+;;;      Beware of degrees
+;;;
+; created April 5, 1992
+START:
+<getvars @oldvars
+nrows #1 @nrows
+row-degs #1 @rowdegs
+characteristic #1 @char
+
+ring @t
+@char
+@nrows
+U[1]-U[100]
+;
+
+ring-sum #1 @t @T
+fetch @t @t
+fetch #1 @M
+ ;betti @t
+ ;betti @M
+mult @t @M @I
+power @t #2 @tp
+power @I #2 @Ip
+lift-std @tp @tp
+lift @tp @Ip #3
+
+ev @oldvars #3 #3
+
+kill @oldvars @nrows @rowdegs @char @t'zero @T'zero 
+kill @T @t @M @I @Ip @tp 
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+
+int p 2
+int q 2
+int d 2
+<ring p*q a[1,1]-a[p,q] r
+<generic_mat a[1,1] p q m
+type m
+<sym m d md
+type md
+betti md
+listvars
+
+;Case p=q=d=2
+; a[1,1]2       a[1,1]a[1,2]              a[1,2]2       
+; 2a[1,1]a[2,1] a[1,2]a[2,1]+a[1,1]a[2,2] 2a[1,2]a[2,2] 
+; a[2,1]2       a[2,1]a[2,2]              a[2,2]2       
+
+;NOTE:  sym does not commute with transpose (of matrices).
+;This is because if m: F \to F^* is a map, then 
+;and m is written with resp to a choice of basis
+;and dual basis, then the dth symmetric power of
+;the matrix for m writes it in a pair of bases that
+;are NOT dual bases -- Sym(F^*) is not the dual of
+;Sym(F).
+; ;;;;;;;;;;;;;;;;;
+;sym_d should be a functor!
+int d 3
+int a 2
+int b 3
+int c 3
+<ring a*b+b*c x[1,1]-x[b,a]y[1,1]-y[c,b] r
+<generic_mat x[1,1] b a X
+<generic_mat y[1,1] c b Y
+type X
+type Y
+mult Y X Z
+<sym Z d Zd
+<sym X d Xd
+<sym Y d Yd
+mult Yd Xd ZZ
+subtract Zd ZZ ans
+type ans ; should be 0.
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;The invariance of the form of the catalecticant
+;matrix, here (p+1)x(q+1)
+int p 2
+int q 2
+int n p+q
+
+<ring n+1 a-z r
+cat a m
+0..p
+0..q
+type m
+
+<ideal row1 2 5
+<ideal row2 7 9
+<stack A row1 row2
+transpose A At
+<sym At p Ap
+transpose Ap Ap ;we now have pth div power of A
+<sym At q Aq    ;dual of qth div power of A
+
+mult m Aq m1
+mult Ap m1 m1
+type m1 ; its still a catalecticant
+
+<sym At n An
+<inverse An An   ;inv of dual of nth div power
+mult r An r1
+ev r1 m1 mm1
+
+type m
+type mm1 ;the same as m!

@@ -1,0 +1,262 @@
+incr-set prlevel 1
+if #0>=2 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<unmixed_radical1 I J [verbose]
+;;;
+;;; Sets J = the intersection of the primes of 
+;;; minimal height containing an ideal I
+;;; in a polynomial ring, by the 
+;;; iterated jacobian minor method, modified to use
+;;; the annihilators of cokernels of appropriate
+;;; wedges of the module of differentials.  The
+;;; effects of this are
+;;;     1. It doesn't depend on forming determinants,
+;;;        which can be slow if the size is large. 
+;;;        This also frees it from the limitation 
+;;;        on the size of minor Macaulay can compute.
+;;;        In revenge, it requires the computation of
+;;;        the annihilator of a rather large module,
+;;;        which is VERY slow in the case of the
+;;;         k3carpet, for example.
+;;;     2. It gives a somewhat larger ideal.  This
+;;;        could be good or bad, but potentially 
+;;;        breaks the process into more smaller steps.
+;;;
+;;; Shouts progress reports -the size of jacobian
+;;; minors being used followed by betti of the
+;;; resulting quotient ideal at each stage -- if
+;;; a third argument is present.
+;;;
+;;; Unless one knows in advance that I 
+;;; is unmixed, one should do
+;;; <remove_low_dim I I
+;;; (which runs relatively fast)
+;;; before using this script.
+;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;         I an ideal
+;;;          [verbose] anything or nothing
+;;; Output values:
+;;;          J an ideal, reduced and equal to the
+;;;          radical of I along the components of
+;;;          I of maximal dimension.
+;;;     Method:
+;;; Find the smallest annihilator of an exterior
+;;; power of the module of differentials of R/I
+;;; which does not contain a nzd modulo I,
+;;; and take the ideal quotient with respect to
+;;; it,
+;;;
+;;; as long as the exterior power in question is
+;;; >= dim I + 1 
+;;;
+;;; Caveats: This method doesn't work if
+;;; we start in a factor ring.  Because of 
+;;; the bug in koszul, wedge_coker will produce
+;;; an erroneous result if the variables have
+;;; different weights.
+; created 11/19/89
+START:
+;Get a means of returning to the original ring:
+setring #1
+<getvars @oldvars
+nvars #1 @nvars
+
+;move to a ring with just one block
+;of variables:
+<copyring a @r 
+setring @r
+ev @r #1 @I
+copy @I @I1
+
+;compute the codim of I
+std @I @I
+codim @I @codimI
+
+;initialize the loop
+int @size 0
+
+inc_size:
+int @size @size+1
+if @size>@codimI end1
+
+same_size:
+;The basic loop:
+jacob @I @J
+
+qring @I @q
+fetch @J @J
+transpose @J @J
+<wedge_cokernel @J @nvars-@size+1 @J
+
+;compute a minimal presentation:
+<prune @J @J
+std @J @J
+
+;Test to see whether the codim of @J is > codim @I
+<codim @J @test
+;(Note that this computes the codim over the
+;original ring, not the factor ring.)
+;loop if so:
+if @test>@codimI inc_size
+
+;print progress report if the third argument is present:
+if #0<3 continue0
+shout echo size minors in use:
+shout type @size
+shout echo about to take ann J, where J is
+shout betti @J
+continue0:
+
+<annihilator @J @J
+
+;print progress report if the third argument is present:
+if #0<3 continue1
+shout echo ann J:
+shout betti @J
+continue1:
+
+;Now move back to the original ring
+setring @I
+fetch @J @J
+quotient @I @J @I1
+;this gives @I1 with a std basis
+
+;print progress report if the third argument is present:
+if #0<3 continue
+shout echo betti of new ideal:
+shout betti @I1
+continue:
+
+putstd @I1 @I
+forcestd @I @I
+jump same_size
+
+end1:
+
+;Move the answer back to the original ring:
+ev @oldvars @I1 #2
+
+kill @r'zero @r @q'zero @q @codimI @I @J @I1 @size 
+kill @oldvars @nvars @test 
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 3 a-z r
+<ideal i a3
+<unmixed_radical i j 
+<unmixed_radical1 i j verbose
+<unmixed_radical1 i j 
+type j
+;should be a
+listvars
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+
+<ring 3 a-z r
+power r 3 r3
+<unmixed_radical1 r3 j verbose
+;almost 6 seconds
+type j
+;should be a b c
+
+<ring 3 a-z r
+power r 3 r3
+<unmixed_radical r3 j verbose
+
+type j
+;should be a b c
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+<ring 5 a-z r
+ideal i
+3
+a5+b5+c5+d5+e5-5abcde
+ea3b+ab3c+bc3d+cd3e+de3a
+e2ab2+a2bc2+b2cd2+c2de2+d2ea2
+set prlevel -1
+set timer 1
+<remove_low_dim i i
+betti i
+<unmixed_radical1 i j
+;Takes about 5 minutes; 
+type j
+betti j
+res j j
+betti j
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;
+;Recovery of a scroll from a k3 carpet:
+
+;First make a k3carpet in a+b+2 variables
+;for this to work the following integers must
+;be >=2
+
+reset
+
+int a 2
+int b 2
+<ring a+1 x[0]-x[a] r1
+<ring b+1 y[0]-y[b] r2
+ring-sum r1 r2 r
+cat x[0] A
+0 1
+0..a-1
+cat y[0] B
+0 1
+0..b-1
+type A
+type B
+
+<k3carpet A B i
+
+;set autocalc 1
+;set autodegree 2
+;res i ii 
+;betti ii
+;should - and does - show the last linear term
+;in the bth place.  Note that the codim is a+b-1
+;and the degree is 2(a+b) = 2(g-1).
+
+type i
+
+set prlevel -2
+set timer 1
+<unmixed_radical i j
+;33 sec for the case a=b=2
+<unmixed_radical1 i j
+;8 minutes for the case a=b=2
+res j j
+betti j
+pring j
+
+
+; ;;;;;;;;;;;;;;;;;;;;;;;
+should we perhaps get a smaller ideal to 
+quotient with respect to?
+<ring 5 a-z r
+<ideal i a2+bc
+power r 3 r3
+std r3 r3
+betti r3
+std i i
+qring i q
+fetch r3 r3
+std r3 r3
+betti r3
+codim r3
+;Gives codim over r, not q
+setring r
+fetch r3 r3
+std r3 r3
+codim r3
+;Has lower codim! so this is indeed a way of getting
+;a smaller ideal.

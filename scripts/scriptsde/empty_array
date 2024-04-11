@@ -1,0 +1,37 @@
+incr-set prlevel 1
+if #0=3 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<empty_array arr arr1 arr2
+;;;
+;;; Creates a new, empty, array:  three 0x0 matrices over the current ring.
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;
+;;; Output values: arr arr1 arr2
+;;;
+;;; (discussion)
+;;;
+;;; Caveats:
+;;;
+; created ...
+START:
+mat #1
+0
+0
+mat #2
+0
+0
+mat #3
+0
+0
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 3 a-z r
+<empty_array arr arr1 arr2
+<add_matrix_to_array arr arr1 arr2 r
+<pres arr arr1 arr2

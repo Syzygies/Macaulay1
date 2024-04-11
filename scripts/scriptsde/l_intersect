@@ -1,0 +1,80 @@
+incr-set prlevel 1
+if #0>1 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<l_intersect i1 i2 ... is k
+;;;
+;;; computes the intersection of the possibly inhomog ideal
+;;; i1...is and places a set of generators for the answer in
+;;; k.  The result is valid for the local ring that is the
+;;; localization of the original polynomial ring at the 
+;;; homogeneous maximal ideal.  The script homogenizes all,
+;;; uses "intersect",  uses l_minimal0,
+;;; and then dehomogenizes.
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;
+;;; Output values:
+;;;
+;;; (discussion)
+;;;
+;;; Caveats:
+;;;
+; created ...
+START:
+;make a way back to the original ring, 
+;dehomogenizing w.r.t. the first var.
+setring #1
+<getvars @vars
+<ideal @dehom 1
+concat @dehom @vars
+
+;create a new ring
+<copyring x @R
+characteristic #1 @charac
+ring @R1
+  @charac
+  1
+  t
+  ;
+  ;
+ring-sum @R1 @R @S  ; this chooses elimination order w.r.t. "t".
+;
+
+
+;prepare for loop:
+<ideal @i 1
+int @s #0-1
+int @n 0
+fetch @R @R
+
+loop:
+int @n @n+1 
+if @n>@s doneint
+ev @R #@n @j
+homog @j t @j
+intersect @i @j @I
+copy @I @i
+jump loop
+doneint:
+
+ev @dehom @i @id
+<l_minimal @id #(@s+1)
+
+
+spare
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 2 st r
+<ideal j1 s2+s3 
+<ideal j2 s2+t3
+
+set prlevel -1
+<l_intersect j1 j2 m
+type m
+

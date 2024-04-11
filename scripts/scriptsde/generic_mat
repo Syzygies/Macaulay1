@@ -1,0 +1,59 @@
+incr-set prlevel 1
+if #0=4 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;; 	<generic_mat var numrows numcols A
+;;;
+;;; Create a generic matrix, whose (1,1) entry is "var".
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;  var = either a ring variable or the integer i to specify the i+1 st 
+;;;	   variable.
+;;;  numrows, numcols = size of the result generic matrix.
+;;;
+;;; Output values:
+;;;  A   = a generic matrix of the given size, defined over the current ring.
+;;;	   The row degrees of A are set to 0.
+;;;
+;;; Caveat:
+;;; 	If the current ring has too few variables, then the matrix is padded
+;;; with zeros.
+; created 4/24/89 MS,DE
+START:
+
+; The following code imitates a "cat" command of the form:
+; 	cat var A
+;         rows? 0 numcols 2*numcols ... (numrows-1)*numcols
+;         cols? 0..numcols-1
+
+; form the transposed matrix by concatenating successive columns 
+int @i 0
+<zeromat #3 0 #4
+loop:
+    cat #1 @A
+	0..(#3)-1
+	@i
+    concat #4 @A
+	int @i @i+(#3)
+    if (@i<(#2)*(#3)) loop
+
+; transpose the result, and correct the degrees
+transpose #4 #4
+setdegs #4
+    ;
+    ;
+
+kill @i @A
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 12 a[1,1]-a[3,4] R
+<generic_mat
+<generic_mat a[1,1] 2 3 M
+type M
+listvars

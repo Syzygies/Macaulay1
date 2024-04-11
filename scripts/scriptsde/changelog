@@ -1,0 +1,283 @@
+12/18/89
+I should have started this a long time ago!
+Added scripts 
+<random_element (of given degree in a column space)
+<random_map (of given degree between given modules)
+<module_iso (a probabalistic check.) 
+
+Changed 
+<hom_and_map to produce a "pruned" answer; 
+probably all the hom, ext, etc. scripts should do this,
+since either to examine or to use further one wants
+the pruned version.
+
+Fixed cleanup section of double_dual_1
+
+12/19/89
+Rewrote adjoin_fractions so that it could
+deal with fractions of negative degree (then it 
+homogenizes, and dehomogenizes at the end).  Also
+eliminated the reference to the ring in the calling 
+sequence (it must now be the current ring) and 
+modified the relevant places in "test of scripts"
+and in "extend_ring".
+
+12/30
+Fixed <representatives, which was doing far too much work.
+Discovered that a slightly different approach is faster
+in all the cases I examined.  The improved version of 
+the old representatives is in the script 
+representatives_old (somewhere!)  The new version is
+now called representatives.  There is no more representatives1
+
+Changed 
+<sat I J K [it]
+(both the iterative and non-iterative versions)
+to use a minimal set of generators for J mod I, 
+computed with representatives. 
+Had to add conditionals, since sat works even when
+I is not an ideal!
+On artificial examples
+this tends not to help because J was chosen minimal
+mod I, but representatives is fast, so it doesn't matter
+much; and I think on real examples this will be 
+a significant speedup.
+
+12/31
+Added
+<rat_nor_curve p i [m] 
+to compute the ideal (and defining matrix m) of a rational
+normal curve through the coordinate points and p.
+Future projects: do this for n+3 arbitrary points, 
+by adding a coordinate transformation;
+and do it (somehow!) for schemes in linearly general
+position.
+Added 
+<column_vector
+to make points (which are columns in <points) more
+conveniently.
+Added pack (not yet put into test_of_scripts)
+To do: 
+<unpack m i j mj
+pack_betti m i
+pack_reg m i reg
+
+Note that the projective dim is just nrows i.
+
+1/20/90
+Added 
+<perp m n 
+to find the annihilator of a linear space of matrices
+(for testing for 1-genericity (n meets the rank 1 locus?)
+and 1/2-genericity (the projection of n intersect the
+rank 1 locus onto one factor is finite?)
+
+Fixed 
+<random_map
+so that the map from f:target a --> target b 
+produced would be reduced mod im b -- in particular,
+it is replaced by 0 if  im f is in im b.
+
+1/21/90
+Added 
+<submat_by_degs
+to find a submatrix having given row and col degs.
+Why doesn't Macaulay create matrices with col degs ordered?
+
+1/26/90
+Added
+<diff
+to do what I wish the built-in diff did.
+
+2/7/90  Oops!  Changed <diff to do what I really wish it did.
+
+3/23/90 Got rid of some capitalized Ext's Hom's and Tor's;
+Mike had told me the scripts did not work on Unix machines
+with the caps.
+
+3/28 Tested the scripts on Zariski.  Indeed, there were 
+quite a number of troubles coming from capitalization.
+Apparently when my machine uploads files, all the filenames
+come out lower case.  For this reason I changed ALL names
+to pure lower case.  Names affected:
+K3_carpet -> k3_carpet
+I_in_J -> i_in_j
+
+Also, wedge_cokernel was sometimes referred to as wedge_coker.
+
+Created a new test_of_scriptsDE.unix, same as old but
+without the "reset" commands, which stop execution on
+unix machines.  All working.
+
+4/1/90
+added 
+<res m mm [length] [verbose]
+to do what res_to_reg probably should have done.
+With verbose set we still get the regularity bound printed
+out, so we can get at it if necessary.
+
+Added 
+<remove_low_dim_id
+following Craig's suggestion; got substantial speedup.  
+Could we somehow use this with the radical scripts, rather
+than removing components from the top (lowest dim) down???
+Also, how does one use this idea in the case of a module?
+
+5/1/90
+Added 
+<unmixed_radical2
+following Vasconcelos' method. Given a good regular sequence,
+it runs faster than our method.  Given a random regular
+sequence it's a disaster (like projections.)
+
+5/13/90
+Added 
+<sort_by_degree m n [cchange]
+which reorders the columns of a matrix so their degrees are in
+ascending order.  Shouldn't Macaulay give every matrix it
+produces in this form, except where there is some reason not to, 
+as for Koszul?
+
+5/15/90
+Added 
+<regular_sequence i j
+<regular_sequence1 i j
+to find a maximal regular sequence in an ideal i. The method is
+just the obvious, and is slow!  What's the right way to do this?
+
+5/18/90
+Corrected the algorithm for the linear case in 
+<push_forward1
+which gave bad results in case the current ring had fewer
+variables than the source ring.  There is a bug in elim which
+causes trouble over rings which are quotient rings mod a linear
+form; this causes trouble in that case with 
+subring and probably with other scripts as well!
+
+7/31/90
+Added 
+<map_from_col
+which is a different "adjoint"
+to be able to compute arbitrary maps between modules,
+after using <hom_and_map.
+Code was a subset of that in "random_map", 
+except for the part setting the degrees which was unneccessary
+in the random_map context
+
+	There is a potential bug in "map_from_col", in that columns
+	of zeros may be given the wrong degrees.
+	  
+Fixed comments in "hom_and_map" to explain usage with
+map_from_col.
+
+11/10/90
+Added degree bounds to pushforward1, subring, and
+orbit_equations.
+	This adds a potential problem:  If maxdegree is present, 
+autodegree is reset 
+	There should be a way to save it!
+	Some time we should add a maxdegree option to pushforward.
+	
+11/10/90
+Fixed several further problems with the linear case of 
+pushforward1.  Now distinguishes an "easy case" where no
+variables are lost -- then we just need a change of variable --
+and a "main case", where there is a linear projection.  The
+degree bound is operative only in the main case and of course in
+the old nonlinear case.  A little weird?
+
+12/9/90
+Added 
+<stack newmat mat1 .. matn
+which "concatenates rows" of mat1..matn into newmat.  The degrees
+are set so that the col degrees all match those of mat1.  This 
+seems rather a poor convention, but it's not obvious what would be
+better. 
+
+Added 
+<rat_nor_osc_locus u r I
+1<=u<=r-2
+which computes the ideal of the union of the osculating u-planes to
+to the rational normal curve of degree r.  One problem is that in 
+the elimination fairly high degrees are necessary (one set of 
+variables has degree r+1).  This necessitates using several blocks
+of variables, which makes the degree to which one must compute (and
+the space required) rather more.  Still reasonable.  Because of
+this, we abandonned our original plan of doing the elimination
+directly, for maximal efficiency, in favor of the simplicity of
+using "subring".
+
+12/15/90
+Fixed a bug pointed out by Mat Miller in 
+<generic_mat
+which was adding an extra column of zeros IFF an inequality was
+satisfied between the number of rows and cols requested.
+
+1/4/91
+Got Mike S to provide a revision of "koszul" which sets degrees
+correctly -- IN THE CASE OF A MAP TO THE RING.  Made the appropriate
+changes to wedge_coker to make it functional.  Fixed a tiny bug
+in binomial (which was causing error messages, no errors.)
+
+4/9/91
+Added "annihilates" to check whether a given ideal annihilates
+a given module.  This is MUCH faster than computing the annihilator.
+
+4/9/91
+Changed "stack" to set the column degrees of the resulting
+matrix from the row degrees.  This will eliminate most of the
+uses of setdegs after it which were previously necessary.  
+
+4/12/91
+Fixed a bug in getvars which led to trouble in qrings where
+one of the variables had become zero.  This caused trouble in 
+pushforward1.
+Note:  the "elim, keep" construction is bad! better to use a 
+fetch and reset degrees (fetch is currently buggy, and resets
+the degrees incorrectly when one of the columns is 0.)
+
+4/12/91
+Added a new version of annihilator, much better in many large 
+examples.  Called simply annihilator.  
+Note that this may make "unmixed_radical1" more competetive.
+Need to check some time.
+
+Changed copyring to put the component first in the new ring.
+
+12/17/91 Added MacaulayRep
+
+April 3, 1992
+Added special_mat, shout_list
+THERE IS A BUG IN wedge_coker.  The degrees are still set wrong.
+An example is given at the end of the file.  I haven't fixed it
+yet.
+
+April 5, 1992
+Changed special_mat to do something else.
+Added sym to find the symmetric powers of a matrix.
+
+July 4, 1992
+Added select, sorts columns of a matrix according to a "key matrix".
+Added sagbi and the script it calls, sagbi_step, to compute sagbi
+bases.
+Added lex_seg_ideal to produce lex seg ideals efficiently.
+(change it to take a hilbert function as an input?)
+
+November 5, 1992
+Fixed a bug in regularity, that caused "array ref out of bound"
+messages in various places, for example ext(-,r) (and wrong answers,
+occasionally).
+
+July 10, 1993
+Added quotient1.
+
+August 21, 1993
+Added "projective_plane"
+
+December 9, 1993
+Replaced "col-deg" which now gets an "ambiguous command" error
+by "col_degree" in half a dozen scripts from scriptsDE.
+
+December 1993
+Fixed  up "projective plane"
+

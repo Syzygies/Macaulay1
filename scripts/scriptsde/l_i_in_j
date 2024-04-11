@@ -1,0 +1,87 @@
+incr-set prlevel 1
+if #0>1 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<l_i_in_j i j [ans]
+;;;
+;;; Tests whether i \subset j, for
+;;; possibly inhomogeneous ideals,
+;;; in the local ring obtained by localizing the polyniomial ring
+;;; at the maximal homogeneous ideal. Prints 1 if i\subset j,
+;;; and 0 if not  (sets "ans" to this value if present as a third arg).
+;;;
+;;; The result is valid for the local ring that is the
+;;; localization of the original polynomial ring at the 
+;;; homogeneous maximal ideal.  
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters: i, j submodules of the same free module
+;;;
+;;; Output values: ans
+;;;
+;;;  
+;;; The script homogenizes  i and j
+;;; to I and J with
+;;; respect to a new variable "t", and tests whether or not
+;;; I \subset (J+I(oldvars) : t^{\infty}) where (oldvars) is the
+;;; ideal of the variables in the original poly ring.
+;;;
+;;; Caveats:
+;;;
+; created July 18, 1994
+START:
+
+;create a new ring, with one more variable, same char
+; order for saturating w.r.t. "t".
+nvars #1 @n
+characteristic #1 @charac
+ring @R
+  @charac
+  @n+1
+  x[1]-x[@n]t
+  ;
+  ;
+
+submat @R @oldvars
+;
+1..@n
+ev @oldvars #1 @i
+ev @oldvars #2 @j
+
+homog @i t @I
+homog @j t @J
+<mult_ideals @oldvars @I @Ioldvars
+concat @J @Ioldvars
+std @J @J
+sat @J @J t
+<i_in_j @I @J @ans
+
+if #0=3 3args
+shout type @ans
+jump cleanup
+
+3args:
+int #3 @ans
+
+cleanup:
+setring #1
+spare
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 2 st r
+<ideal j1 s2+s3t 
+<ideal j2 s3+s4
+
+;set prlevel -1
+<l_i_in_j j1 j2
+<l_i_in_j j2 j1
+pring
+listvars
+
+<l_i_in_j j1 j2 m
+type m
+

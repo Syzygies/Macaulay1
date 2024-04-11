@@ -1,0 +1,64 @@
+incr-set prlevel 1
+if #0=5 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;; 	<homology b c f g h
+;;;
+;;; (brief description)
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		b,c,f,g = modules
+;;; Output values:
+;;;		h = module
+;;;
+;;; If b,c are maps presenting modules B,C,
+;;; and f,g are maps inducing f: A->B and g:B->C,
+;;; (for some module A)
+;;; then a presentation of the homology is computed
+;;; and assigned to h.
+
+;Created 4/16/89 DE
+START:
+
+modulo #4 #2 @kernel
+copy #1 @image
+concat @image #3
+modulo @kernel @image #5
+
+kill @kernel @image
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset 
+;homology of the complex
+;   a2        a2
+; R --> R/a3 --> R/a3
+;
+;where R is the ring k[a]/a4.
+;(The homology is the residue class field.)
+
+<ring 1 a r
+<ideal i a4
+qring i qr
+
+<ideal j1 a3
+copy j1 j2
+setdegs j2
+-2
+;
+
+<ideal f1 a2
+copy f1 f2
+setdegs f2
+-2
+;
+
+<homology
+<homology j1 j2 f1 f2 h
+type h
+; a 
+

@@ -1,0 +1,46 @@
+incr-set prlevel 1
+if #0>0 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<shout_list n1..nk
+;;;
+;;; uses the commands shout and col-degs
+;;; to output a list of
+;;; numbers on a single line
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;       n1..nk  integers
+;;;
+; created April 3, 1992
+START:
+int @k #0
+mat @null
+0
+0
+
+int @i 0
+loop:
+int @i @i+1
+if @i>@k done
+
+mat @new
+0
+1
+setdegs @new
+;
+#(@i)
+concat @null @new
+jump loop
+done:
+shout col-degs @null
+
+;kill @k @null @new  @i 
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<shout_list 3 4 5 6
+listvars

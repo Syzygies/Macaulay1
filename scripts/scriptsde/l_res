@@ -1,0 +1,122 @@
+incr-set prlevel 1
+if #0>=5 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<l_res i arr arr1 arr2 nsteps [verbose]
+;;;
+;;; Computes nsteps of a local minimal resolution for i.
+;;; Puts the value into the array arr arr1 arr2
+;;; (the first matrix is i -- not the minimal form of i.
+;;; Use 
+;;; <l_minimal i i 
+;;; first if the opposite result is desired.)
+;;;
+;;; The command
+;;;    row_degs arr2
+;;; gives the betti numbers computed.
+;;;
+;;; If the 6th argument is present, the script prints out
+;;; the betti numbers as they are computed.
+;;; 
+;;; The result is valid for the local ring that is the
+;;; localization of the original polynomial ring at the 
+;;; homogeneous maximal ideal.  
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters: i matrix, nsteps int >=1
+;;;
+;;; Output values: arr arr1 arr2  Array of matrices (as defined in 
+;;; "scriptsmj"
+;;;
+;;;  
+;;; The script homogenizes  i 
+;;; to I and J with
+;;; respect to a new variable "t", which is placed first
+;;; It alternately resolves a step and replaces the 
+;;; generators for the kernel with a subset that is a minimal
+;;; set of generators modulo t=1, using <l_minimal0.
+;;;
+;;; Caveats:
+;;;
+; created July 18, 1994
+START:
+;make a way back to the old ring
+setring #1
+<getvars @vars
+<ideal @return 1
+concat @return @vars
+
+<empty_array @arr @arr1 @arr2
+<add_matrix_to_array @arr @arr1 @arr2 #1
+
+if #0<6 cont1
+nrows #1 @betti0
+ncols #1 @betti1
+shout type @betti0
+shout type @betti1
+cont1:
+
+;create a new ring, with one more variable, same char
+; New var "t" comes first.
+nvars #1 @n
+characteristic #1 @charac
+ring @R
+  @charac
+  @n+1
+  tx[1]-x[@n]
+  ;
+  ;
+
+submat @R @oldvars
+;
+2..@n+1
+ev @oldvars #1 @i
+
+homog @i t @I
+
+;initialize the loop
+int @n 1
+
+loop:
+int @n @n+1
+if @n>#5 cleanup
+res @I @Ir 2
+<l_minimal0 @Ir.2 @nextmat
+
+if #0<6 cont2
+ncols @nextmat @bettinum
+shout type @bettinum
+cont2:
+
+homog @nextmat t @I
+ev @return @nextmat @nextmat
+<add_matrix_to_array @arr @arr1 @arr2 @nextmat
+jump loop
+
+cleanup:
+copy @arr #2
+copy @arr1 #3
+copy @arr2 #4
+spare
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 2 st r
+<ideal i 1 t
+power i 3 i3
+
+<ideal j s2+s3t st t2
+
+;set prlevel -1
+<l_res j jj jj1 jj2 4 ver
+<pres jj jj1 jj2
+
+<l_res i3 a b c 5 ver
+<pres a b c
+row_degs c
+
+
+

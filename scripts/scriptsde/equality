@@ -1,0 +1,48 @@
+incr-set prlevel 1
+if #0=3 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<equality I J ans
+;;;
+;;; If I, J are submodules of the same free module,
+;;; (given as the column spaces of matrices)
+;;; then ans is set to 1 if I=J, 0 otherwise.
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;       I,J = n-rowed matrices
+;;; Output values:
+;;;       ans = integer
+;;;
+;;; calls i_in_j twice.  
+;;; Is there a way computing just one std basis?
+;;;
+; created 10/11/89 DE+CH
+START:
+<i_in_j #1 #2 @ans
+if @ans=0 NO
+<i_in_j #2 #1 @ans
+if @ans=0 NO
+
+int #3 1
+
+jump cleanup
+NO:
+int #3 0
+incr-set prlevel -1
+type ans
+incr-set prlevel 1
+cleanup:
+kill @ans
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 2 a-z r
+<ideal i a2 ab b2
+<ideal j a2 ab b3
+<equality i j ans
+type ans
+<equality j j ans
+type ans

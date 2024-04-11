@@ -1,0 +1,59 @@
+incr_set prlevel 1
+if #0=3 START
+incr_set prlevel -1
+;;; Usage:
+;;;     <rmap vars values f
+;;;
+;;; Create a ring map which sends the ith element of the ideal "vars"
+;;; (which must be a variable) to the ith element of the ideal "values".
+;;; All other variables are sent to zero.
+incr_set prlevel 1
+jump END
+;;; Parameters:
+;;;   vars = 1xn matrix of (distinct) variables, with base ring R
+;;;   values = 1xn matrix of polynomials over the ring S
+;;; Output values:
+;;;   f = 1xm matrix over S, where m is the number of variables of R.
+;;;
+;;; This script is useful since the variables don't have to appear "in
+;;; order".  It is also useful in scripts where you don't know the names
+;;; of variables in advance.
+;;;
+;;; Caveats:  If an entry of "vars" is not a variable, the initial term is
+;;; used.  This initial term should be a variable.
+;;;
+; last modified 5/22/89 MES
+START:
+     
+setring #1
+<getvars @allvars
+contract @allvars #1 @m
+transpose @m @m
+setring #2
+fetch @m @m  ; put this matrix of constants in the "image" ring.
+mult #2 @m #3
+     
+kill @allvars @m
+     
+END:
+incr_set prlevel -1
+     
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+     
+<rmap
+;-------------
+<ring 8 a-z r
+<ideal j d c f a
+<ideal k b2-c2 bh+h2 1 b3-d3
+<rmap j k f
+type f
+;-------------
+<ring 8 a-z r
+<ideal j d-e c f a+b
+<ring 4 wxyz s
+<ideal k w2+x2 x4 x-y z10
+<rmap j k f
+type f
+listvars
+;-------------
+     

@@ -1,0 +1,90 @@
+incr_set prlevel 1
+if #0=3 START
+incr_set prlevel -1
+;;; Usage:
+;;; 	<blowup J T L
+;;;
+;;; L is set to be the ideal with standard basis defining the Rees
+;;; ring R[tJ] as a quotient ring of a polynomial ring T over the base
+;;; ring R of J.  The variable "t" is the first variable of T.
+incr_set prlevel 1
+jump END
+;;; Parameters:
+;;;   J = ideal to blowup.
+;;;   T = a polynomial ring over R in variables whose weights are
+;;;	  proportional to the degrees of the generators of J.
+;;;
+;;; Output values:
+;;;  L = the result ideal in T.
+;;;
+;;; The ring R may be a quotient ring.
+;;;
+;;; The ideal L defining the blowup ring R[tJ] is
+;;; obtained by eliminating "t" from the ideal K produced by the script
+;;; "blowup0".  The situation is summarized by the following diagram:
+;;;
+;;; 	K ---> S = R[t,y] --->> R[t]   (y[i] |--> tJ[i])
+;;; 	|        |               |
+;;;	    L ---> T = R[y]   --->> R[tJ]
+;;;
+;;; where the vertical lines represent inclusions.
+;;;
+;;; It is convenient to form the ring T by making a polynomial ring whose
+;;; generators correspond to the generators of J, and then use ring_sum
+;;; to tensor this ring with R.
+;;;
+;;; Caveats:
+;;;	If the ring T has more generators than needed, the correct
+;;; initial subset is chosen.
+;;;
+; modified 4/24/89 DE,MS, 5/23/89 MES
+START:
+     
+; first find the ideal L over the ring S, which is the base ring of the
+; ideal K produced by "blowup0".
+<blowup0 #1 @K
+elim @K @L 1   ; eliminate "t"
+     
+; sort the variables of T into the x variables corresponding to the
+; variables of R and the y variables corresponding to the generators of J.
+imap @xvars #1 #2
+    ;
+<getvars @Tvars
+forcestd @xvars @xvars        ; asserts that "xvars" is a standard basis
+reduce @xvars @Tvars @yvars   ; replaces the x variables by zeros
+compress @yvars @yvars        ; removes the zeros, leaving the y variables.
+     
+; Form the projection map from S to T.
+poly @map 0
+concat @map @yvars @xvars
+     
+; Move L to the ring T.
+ev @map @L #3
+     
+kill @K @L @xvars @Tvars @yvars @map
+     
+END:
+incr_set prlevel -1
+     
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+;; example: blowup the twisted cubic curve in P3 at the point (0,0,0,1)
+<blowup
+<ring 4 a-d R
+     
+cat a m
+    0 1
+    0 1 2
+wedge m 2 q
+flatten q q
+type q
+; should be: -b2+ac bc-ad -c2+bd
+     
+std q q
+qring q r
+<ideal j a b c
+<ring 3 xyz T
+ring_sum r T T
+<blowup j T L
+type L
+listvars
+     

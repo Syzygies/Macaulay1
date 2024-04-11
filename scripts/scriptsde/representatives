@@ -1,0 +1,90 @@
+incr-set prlevel 1
+if #0=3 START
+incr-set prlevel -1
+;;; Usage:
+;;; <representatives a b result
+;;;
+;;; computes a minimal set of representatives for the
+;;; image of a modulo the image of b.
+;;; That is, if a and b are regarded as maps to
+;;; a free module F, then result is a map to
+;;; F whose columns correspond to a minimal set
+;;; of generators of (im a  +  im b)/(im b). 
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;		a, b matrices with the same target (row space).
+;;; Output values:
+;;;		result = matrix with the same target as a,b.
+;;;
+
+;;; CAVEAT: This script seems much faster than the old version of 
+;;; representatives, even though a standard basis for a large
+;;; ideal is computed twice!!!!!  Once the script lift-std
+;;; is fixed to return a minimal set of generators, it
+;;; can be further improved (see the comments below)
+
+; created 3/3/89 David Eisenbud; Rev 8/14/89 DE
+;Rev 12/30/89 DE
+START:
+copy #1 @a
+concat @a #2
+;;;;;;;;;;;;;;;;
+;The following line spoils the efficiency of 
+;this script somewhat, 
+;but is necessary at the moment (12/30/89) because 
+;lift-std
+;does not return a minimal set of generators.
+;If this bug is fixed, the next line can simply be omitted!
+std @a @a
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+lift-std @a @a
+lift @a #2 @c
+
+<complement @c @comp
+mult @a @comp #3
+
+kill @a @c @comp
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 4 a-z r
+<ideal i a+b+c+d a4+d4
+power r 2 m2
+concat i m2
+<representatives
+<representatives r i reps
+type reps
+listvars
+
+<ring 1 a s
+<ideal i1 a
+<ideal i2 a a
+<representatives i2 i1 j
+type j
+<representatives2 i2 i1 j
+type j
+;
+
+<ring 5 a-z r
+power r 4 r4
+<powers r 3 cubes
+<representatives r4 cubes m
+;11.75 sec 
+<representatives2 r4 cubes m
+;4 sec 
+betti r3
+betti m
+
+<ring 8 a-z r
+power r 2 r2
+<powers r 2 s2
+<representatives r2 s2 m
+;14 sec 
+<representatives2 r2 s2 m
+;3 sec 
+betti r3
+betti m

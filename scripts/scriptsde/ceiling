@@ -1,0 +1,36 @@
+incr-set prlevel 1
+if #0=3 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<ceiling p q c
+;;;
+;;; computes the ceiling of p/q, where p,q are
+;;; positive integers
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:p,q integers; q <>0
+;;;
+;;; Output values:c an integer
+;;;
+;;; (discussion)
+;;;
+;;; Caveats: Only works for positive ints
+;;; (because of the funny behavior of
+;;; Macaulay's integer division!)
+;;; Does not check for q = 0.
+;;;
+; created May 5, 1994 DE
+START:
+int #3 #1/#2
+if #3*#2=#1 done
+int #3 #3+1
+
+done:
+type #3
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<ceiling 5 3 c
+type c

@@ -1,0 +1,44 @@
+incr-set prlevel 1
+if #0=3||#0=4 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<ring n varlist ringname
+;;; or
+;;; 	<ring n varlist ringname characteristic
+;;;
+;;; creates a ring with n variables, specified by varlist
+;;; ( eg a-z  or  x[1,1]-x[2,3]st ).
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;		n >0  number of variables 
+;;;	    varlist = specification of variables 
+;;;               acceptable to the ring command
+;;; Output values:
+;;;	    A ring is created named ringname 
+;;;     (which then refers to the ideal of variables.)
+;;; 
+;;;	This creates a ring, with default characteristic, 
+;;; weight one variables,
+;;; and reverse lex. order,using the given variables.  
+;;; If too few variables 
+;;; given, variables A[1]A[2]... are used. 
+
+; created 2/6/89 Mike Stillman changed June 14, 1993 DE 
+START:
+ring #3
+    #4
+    #1
+    #(2)A[1]-A[#1]
+    ;
+    ; the "c" here slowed things down!
+END:
+incr-set prlevel -1
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring
+<ring 9 ABCx[1,1]-x[2,3]a-z r
+;ring only takes as many variables as it needs.
+pring
+<ring 4 a-z r 2
+pring

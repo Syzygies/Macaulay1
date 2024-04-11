@@ -1,0 +1,121 @@
+incr_set prlevel 1
+if #0=4 START
+incr_set prlevel -1
+;;; Usage:
+;;;   <comp_to_array w M v1 v2
+;;;
+;;; Given a computation w, this command returns the triple
+;;; (M,v1,v2) which holds the array of matrices.
+;;;
+incr_set prlevel 1
+jump END
+;;; Parameters:  w  -  a Macaulay produced computation
+;;;
+;;; Output values: (M,v1,v2) - an array of matrices
+;;;
+;;; The Array of Matrices Data Type:
+;;;
+;;; An array of matrices is a triple (M,v1,v2) of matrices.
+;;; The first coordinate is a direct sum of matrices such
+;;; that the upper left hand corner is thought of as the
+;;; first matrix, and so on.
+;;;
+;;; The second coordinate is an n by 0 matrix whose row
+;;; degrees give the ranks of the free modules which are
+;;; the sources of the maps.
+;;;
+;;; The third coordinate is an n by 0 matrix whose row de-
+;;; grees give the ranks of the free modules which are the
+;;; targets of the maps.
+;;;
+; created ... 3/25/92 by M.Johnson
+START:
+
+; clear out the v1 and v2 matrices
+
+mat @dummy_matrix
+0
+1
+mat @v1_tr
+0
+0
+mat @v2_tr
+0
+0
+; and the M matrix
+
+mat #2
+0
+0
+
+int @i 1
+LOOP:
+	nrows #1.@i @image_rank
+	ncols #1.@i @source_rank
+	if @source_rank=0 ENDLOOP
+	setcoldegs @dummy_matrix
+	-@source_rank
+	concat @v1_tr @dummy_matrix
+	setcoldegs @dummy_matrix
+	-@image_rank
+	concat @v2_tr @dummy_matrix
+	dsum #2 #1.@i @sum_matrix
+	copy @sum_matrix #2
+	int @i @i+1
+jump LOOP
+
+ENDLOOP:
+	setcoldegs @dummy_matrix
+	-@source_rank
+	concat @v1_tr @dummy_matrix
+	ncols #1.(@i-1) @image_rank
+	setcoldegs @dummy_matrix
+	-@image_rank
+	concat @v2_tr @dummy_matrix
+	mat @last_mat
+		@image_rank
+		0
+	dsum #2 @last_mat @sum_matrix
+	copy @sum_matrix #2
+
+transpose @v1_tr #3
+transpose @v2_tr #4
+
+kill @i @sum_matrix @dummy_matrix @image_rank @source_rank
+kill @v1_tr @v2_tr @last_mat
+
+END:
+incr_set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+% <2byn 1 4 0 0 M I
+
+% <nres I Ires
+
+% <comp_to_array Ires M v1 v2
+
+% type M
+; b2-ac bc-ad bd-ae c2-ae cd-be d2-ce 0  0  0  0  0  0  0  0  0  0  0  
+; 0     0     0     0     0     0     0  0  e  0  0  d  0  c  0  0  0  
+; 0     0     0     0     0     0     e  0  0  e  c  -c d  -b 0  0  0  
+; 0     0     0     0     0     0     -d -e -c 0  0  -b -c -a 0  0  0  
+; 0     0     0     0     0     0     0  e  0  -d -b b  0  a  0  0  0  
+; 0     0     0     0     0     0     0  -d b  c  a  0  0  0  0  0  0  
+; 0     0     0     0     0     0     b  c  0  0  0  0  a  0  0  0  0  
+; 0     0     0     0     0     0     0  0  0  0  0  0  0  0  -a 0  c  
+; 0     0     0     0     0     0     0  0  0  0  0  0  0  0  0  -a -b 
+; 0     0     0     0     0     0     0  0  0  0  0  0  0  0  0  -c -d 
+; 0     0     0     0     0     0     0  0  0  0  0  0  0  0  a  b  0  
+; 0     0     0     0     0     0     0  0  0  0  0  0  0  0  -c -d 0  
+; 0     0     0     0     0     0     0  0  0  0  0  0  0  0  -c 0  e  
+; 0     0     0     0     0     0     0  0  0  0  0  0  0  0  b  c  0  
+; 0     0     0     0     0     0     0  0  0  0  0  0  0  0  d  e  0  
+
+% row_degs v1
+6 8 3 0
+
+% row_degs v2
+1 6 8 3
+
+	

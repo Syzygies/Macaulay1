@@ -1,0 +1,72 @@
+incr-set prlevel 1
+if #0=2 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;;     <annihilator2 X ann_X
+;;;
+;;; computes the annihilator of X by finding the annihilator of
+;;; a "general" element, by the rational normal curve method.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		X = a module
+;;;
+;;; Output values:
+;;;		ann_X = its annihilator, as an ideal with standard
+;;;		basis.
+;;;
+;;; This script is sometimes dramatically faster than the obvious method
+;;; using quotient, (done in annihilator1) sometimes slower.
+;;;
+;;; Caveats:  The script does not necessarily produce a minimal 
+;;; generating set for the annihilator.
+
+;Created 2/89 DE. Revised 5/13/89 DE
+START:
+
+;Get a handle to the base ring of X
+setring #1
+<getvars vars_origin@
+
+;Make a ring with two more variables, st
+<copyring x r@
+<ring 2 st r1@
+ring-sum r@ r1@ r@
+
+;Bring the module "modulename" to the new ring:
+ev r@ #1 m@
+
+;Form a "general column" according to the RNC philosophy
+ideal ss@
+        2
+        1
+        s
+nrows m@ nrows@
+power ss@ nrows@-1 ss@
+transpose ss@ ss@
+
+;Now add this new column on to the
+;matrix m@ and homogenize
+concat ss@ m@
+homog ss@ t ss@
+
+;Form the annihilator by finding all the
+;elements that throw this general column into
+;the column space of m@
+syz ss@ 1 w@
+
+sat w@.1 ann_m@ t
+
+ev vars_origin@ ann_m@ #2
+
+kill vars_origin@ r@ r1@'zero r@'zero nrows@
+kill m@ ss@ w@ ann_m@ r1@
+
+END:
+incr-set prlevel -1
+
+$;;;;;;;;;;;;;; Examples ;;;;;;;;;;;;;;;
+<annihilator2
+see tests in annihilator1

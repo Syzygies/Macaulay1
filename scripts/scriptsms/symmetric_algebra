@@ -1,0 +1,80 @@
+incr_set prlevel 1
+if #0=4 START
+incr_set prlevel -1
+;;; Usage:
+;;;     <symmalg m n old new
+;;;
+;;; Compute the symmetric algebra, n, of the module presented by
+;;; the matrix m.  "old" and "new" are ideals containing the variables
+;;; coming from the ring, and the rows of m, respectively.
+incr_set prlevel 1
+jump END
+;;; Parameters:
+;;;   m = axb matrix
+;;;
+;;; Output values:
+;;;   n = symmetric algebra of m, an ideal over a new ring S.
+;;;   old = ideal of the variables of S corresponding to base ring of m.
+;;;   new = ideal of the variables of S corresponding to the rows of m.
+;;;
+;;; The symmetric algebra is obtained from m by adding "a" variables to
+;;; the base ring of m, one for each row of the matrix m, and then multiplying
+;;; the matrix m by the vector of these new variables.
+;;;
+;;; More specifically, the functor S*(-) (symmetric algebra) is right exact:
+;;; If R^b ---> R^a ---> M ---> 0 is exact, then
+;;; S*(R^b) ---> S*(R^a) ---> S*(M) ---> 0.
+;;; This gives us a presentation for S*M, as a factor ring of S*(R^a), which
+;;; is precisely the ring S above.  Notice that the equations defining
+;;; S*M all have degree one in the "new" variables.
+;;;
+; last modified 5/23/89 MES
+START:
+     
+; first get the necessary information from "m" and its base ring.
+; we shift the degrees of "m" so that the least row degree is exactly 1.
+; (otherwise, if one is negative, the "ring" command will shift ALL the
+; degrees up, which is, I think, undesirable).
+     
+min #1 @d
+dshift #1 1-@d
+nrows #1 @nr
+     
+<copyring B @R1
+ring_from_rows #1 @R2
+    A[1]-A[@nr]
+ring_sum @R2 @R1 @S
+     
+keep @S #4 ; new variables A[1]..A[nr]
+elim @S #3 ; old variables B[1]..B[numvars]
+ev #3 #1 @m
+mult #4 @m #2
+     
+; now clean up: first reset the degrees of "m":
+dshift #1 @d-1
+kill @d @nr @R1 @R2 @S @m
+     
+END:
+incr_set prlevel -1
+     
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+;; test 1: the symmetric algebra on the canonical module of the twisted
+;; cubic in P^3.
+<ring 4 a-d r
+cat a m
+  0 1
+  0 1 2
+<symmetric_algebra m n oldv new
+listvars
+type n
+     
+;; The matrix above should be:
+;;
+;; A[1]B[1]+A[2]B[2] A[1]B[2]+A[2]B[3] A[1]B[3]+A[2]B[4]
+     
+type old
+type new
+pring
+pring n
+     
+<symmetric_algebra

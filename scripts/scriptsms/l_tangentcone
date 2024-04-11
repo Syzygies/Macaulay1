@@ -1,0 +1,78 @@
+incr_set prlevel 1
+if #0=2 START
+incr_set prlevel -1
+;;; Usage:
+;;;     <l_tangentcone I J
+;;;
+;;; Compute the tangent cone, or the associated graded algebra,
+;;; of a ring R/I, where R is the localization of a polynomial ring S at the
+;;; origin (ie. the localization at the homogeneous maximal ideal).
+incr_set prlevel 1
+jump END
+;;; Parameters:
+;;;  I = 1xn matrix over a polynomial ring S.
+;;;
+;;; Output values:
+;;;  J = a standard basis for the ideal defining the tangent cone.
+;;;      J is a 1xr matrix whose entries are homogeneous.
+;;;
+;;; By definition, S/J = R/m + m/m^2 + m^2/m^3 + ...,
+;;; where "m" is the homogeneous maximal ideal of R or S.
+;;;
+;;; J is computed by homogenizing w.r.t. a new variable, say "t",
+;;; and computing a standard basis of I using the monomial order which
+;;; eliminates "t", refined by graded reverse lexicographic order.
+;;;
+;;; After dehomogenizing each element of this standard basis, a standard
+;;;
+;;; The leading form of lowest degree of each element of this standard
+;;; basis, after setting "t" to one, forms a standard basis for the
+;;; ideal J.
+;;;
+;;; This standard basis J can be used to determine various information
+;;; about the ring R/I:
+;;;
+;;; 1. the codimension of I:
+;;;	<l_tangentcone I J
+;;;	codim J
+;;; 2. the multiplicity of R/I:
+;;;	<l_tangentcone I J
+;;;	degree J
+;;; 3. ideal of initial monomials:
+;;;	<l_tangentcone I J
+;;;	in J in'I
+;;;
+; last modified 5/22/89 MES
+START:
+     
+<l_homog0 #1 t[-100] @i'homog
+     
+std @i'homog @is
+in @is @j 1
+setring #1
+imap @f @is #1
+    t[-100] 1
+    ;
+ev @f @j @j
+     
+; find a minimal standard basis.  It will not be in general auto reduced.
+     
+stdpart @j @j !
+forcestd @j #2
+     
+kill @i'homog @is @j @f
+END:
+incr_set prlevel -1
+     
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+     
+<l_tangentcone
+     
+<ring 3 xyz r
+<ideal jj xz+y3 yz+x3 xz+yz-z2
+<l_tangentcone jj kk
+putmat kk
+std kk ll
+hilb ll
+     
+listvars

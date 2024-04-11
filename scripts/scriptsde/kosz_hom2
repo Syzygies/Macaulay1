@@ -1,0 +1,108 @@
+incr-set prlevel 1
+if #0=2 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;;     <kosz_hom2 i J
+;;;
+;;; The dimension of the degree i+1 part of the 
+;;; ith Koszul homology group of R/J is displayed.
+;;; This corresponds to the 2-linear part of the resolution
+;;; at step i, that is, to 
+;;; 	Tor_i (R/J, k)_{i+1}
+;;; where R is the ambient polynomial ring and k is the ground
+;;; field.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		i = integer >0
+;;; 	J = ideal CONTAINING NO LINEAR FORMS
+;;; Displayed value:
+;;;		the dimension of the ith koszul homology in degrees <= I+1
+;;;		(if m is generated in degrees >=0, then there is nothing
+;;;		of degree <0 . )
+;;;
+;;; This corresponds to the 2-linear part of the resolution
+;;; at step i, that is, to 
+;;; 	Tor_i (R/J, k)_{i+1}
+;;; where R is the ambient polynomial ring and k is the ground
+;;; field. Thus:
+;;;		 Setting step = 1 gives the number of deg 2 generators of
+;;; of the ideal, step = 2 gives the linear relations
+;;; on these, etc.
+;;;
+;;; Caveats: J must contain no linear forms for the answer to
+;;; be meaningful.  Though this script beats res on the
+;;; square of the maximal ideal in many variables if i is large,
+;;; res is usually faster!
+;;;
+;Created 2/89 DE; last modified 5/14/89 DE
+START:
+nvars #2 N@
+
+set autocalc 1
+set autodegree 2 
+
+std #2 i@
+qring i@ qr@
+set autodegree 1 
+
+koszul N@ #1 ki@
+
+res ki@ answer@ 2
+
+;RESULTS:
+ncols answer@.2 Ncols@
+<binomial N@ #1+1 bin@
+int koszul_homology@ Ncols@-bin@
+
+setring #2
+set autocalc -1
+shout type koszul_homology@
+
+kill ki@ i@ qr@ qr@'zero answer@ N@ bin@ Ncols@ koszul_homology@
+
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 6 a-z r
+power r 2 i
+res i i 2
+betti i
+; total:      1    21    70 
+; --------------------------
+;     0:      1     -     - 
+;     1:      -    21    70 
+
+<kosz_hom2
+<kosz_hom2 1 i
+; 21
+<kosz_hom2 2 i
+; 70
+;40 sec, 12K in use
+
+<kosz_hom2 5 i
+;1 min 52 sec
+;110K in use
+space
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;However, res is still better at the 2-linear part of the
+;res of a canonical curve:
+reset
+<ribbon ribbondata11 test r
+<kosz_hom2 6 test
+;ran out of memory
+
+reset
+<ribbon ribbondata11 test r
+set timer 1
+set autocalc 1
+set autodegree 2
+res test w
+;18 min, 35 sec, 2869K used.
+betti w
+set autocalc -1

@@ -1,0 +1,146 @@
+incr-set prlevel 1
+if #0=4 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<select data key include exclude
+;;;
+;;; given a matrix "data" and a matrix
+;;; "key", with the same number of columns,
+;;; (but not necessarily the same base ring)
+;;; the script forms the two
+;;; new matrices include and exclude 
+;;; over the base ring of "data".
+;;; "include" is a copy of "data" in which
+;;; the columns corresponding
+;;; to the zeros  in "key", are replaced
+;;; by columns of zeros;  
+;;; "exclude" is a copy of "data" in which
+;;; the columns corresponding
+;;; to the nonzero elements
+;;; in "key", are replaced
+;;; by columns of zeros;  
+;;;     Thus for example to form the "characteristic
+;;; functions c and c' 
+;;; of "key" and its complement, 
+;;; one could do
+;;;
+;;; ncols key n
+;;; <ideal data 1 1
+;;; power data n-1 data
+;;; <select data key c c'
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;      data a matrix
+;;;      key a matrix with the same number of cols
+;;;
+;;; Output values:
+;;;		include, exclude
+;;; matrices with the same shape, and
+;;;     row and col degrees as data.
+;;;
+;;; Script checks for same number of cols in 
+;;; data and key, prints error message if not.
+;;;
+;;; Caveats:
+;;;
+; created June 14, 1992, DE
+START:
+ncols #1 @n
+ncols #2 @nk
+
+if @nk=@n cont
+shout echo data and key don't have same number of cols
+cont:
+
+nrows #1 @m
+col-degs #1 @coldegs
+row-degs #1 @rowdegs
+mat @include
+@m
+0
+setdegs @include
+@rowdegs
+;
+mat @exclude
+@m
+0
+setdegs @exclude
+@rowdegs
+;
+<zeromat @m 1 @zeros
+setdegs @zeros
+@rowdegs
+;
+int @i 0
+
+loop:
+int @i @i+1
+if @i>@n done
+submat #1 @col
+;
+@i
+submat #2 @key
+;
+@i
+compress @key @key
+ncols @key @k
+
+if @k one
+;case @k=0
+concat @include @zeros
+concat @exclude @col
+jump donecol
+
+one:
+;case @k=1
+concat @include @col
+concat @exclude @zeros
+
+donecol:
+jump loop
+done:
+copy @include #3
+copy @exclude #4
+setdegs #3
+@rowdegs
+@coldegs
+setdegs #4
+@rowdegs
+@coldegs
+
+kill @m @n @nk @coldegs @rowdegs @include @exclude 
+kill @zeros @col @key @k @i 
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 2 ab r
+<ideal ky a2 0 1 2
+<ring 2 ab s
+<ideal data1 a2 a3 a4
+<ideal data2 b4 b3 b2 
+<stack dt data1 data2
+setdegs dt 
+1 2
+4 5
+betti dt
+;note: it's not homogeneous!
+type dt
+<select dt ky m1 m2
+pring m1
+setring r
+<select dt ky m1 m2
+pring m1
+
+type m1
+type m2
+betti m1
+betti m2
+
+listvars
+
+<ideal ky0 0 0 0
+<select dt ky0 m1 m2
+type m2

@@ -1,0 +1,129 @@
+incr-set prlevel 1
+if #0>=6 START
+incr-set prlevel -1
+;;; Usage:
+;;;  <submat_by_degs m lbr ubr lbc ubc n [rchange cchange]
+;;;
+;;; Sets n to the submatrix of m involving those
+;;; rows and cols whose degrees satisfy
+;;;   lbr <= row_deg <= ubr
+;;;   lbc <= col_deg <= ubc
+;;; If present, rchange and cchange are set to scalar matrices
+;;; giving the row and column changes: that is, 
+;;; such that n is the composition
+;;;        n = rchange m cchange
+;;;      
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;         m a matrix
+;;;         lb_rows ub_rows lb_cols ub_cols n integers
+;;; Output values:
+;;;         n a matrix
+;;;         rchange, cchange, scalar matrices
+;;;
+;;; Remark:  we could just produce rchange and cchange, and
+;;; multiply; but matrix multiplication can be slow...
+; created 1/21/90 DE
+START:
+copy #1 @m
+<idenrowdegs @m @rchange
+<idencoldegs @m @cchange
+
+;loop through rows
+int @i 0
+
+loop_rows:
+int @i @i+1
+
+no_increment_rows:
+nrows @m @nrows
+if @i>@nrows done_rows
+
+row-deg @m @i @deg
+if (#2<=@deg)*(@deg<=#3) loop_rows 
+submat @m @m
+	1..(@i-1) (@i+1)..@nrows
+	;
+submat @rchange @rchange
+	1..(@i-1) (@i+1)..@nrows
+	;
+jump no_increment_rows
+
+done_rows:
+
+
+;loop through cols
+int @i 0
+
+loop_cols:
+int @i @i+1
+
+no_increment:
+ncols @m @ncols
+if @i>@ncols done_cols
+
+col_degree @m @i @deg
+if (#4<=@deg)*(@deg<=#5) loop_cols 
+submat @m @m
+	;
+	1..(@i-1) (@i+1)..@ncols
+submat @cchange @cchange
+	;
+	1..(@i-1) (@i+1)..@ncols
+jump no_increment
+
+done_cols:
+
+copy @m #6
+
+if #0<8 cleanup
+copy @rchange #7
+copy @cchange #8
+
+cleanup:
+kill @ncols @m @deg @i @nrows @rchange @cchange
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 1 a r
+iden 3 I
+
+setdegs I
+1 2 3
+;
+betti I
+
+;set prlevel -1
+<submat_by_degs I 2 10000 2 2 J rc cc
+type J
+betti J
+; total:      2     1 
+; --------------------
+;     1:      -     1 
+;     2:      1     - 
+;     3:      1     - 
+
+mult I cc J1
+mult rc J1 J2
+type J2
+betti J2
+; total:      2     1 
+; --------------------
+;     1:      -     1 
+;     2:      1     - 
+;     3:      1     - 
+
+;An interesting effect: no rows!
+<submat_by_degs I 2 1 2 2 J
+type J
+betti J
+type J
+
+;and no cols are also possible:
+<submat_by_degs I 2 2 2 1 J
+type J
+betti J
+type J

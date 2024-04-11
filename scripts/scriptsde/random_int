@@ -1,0 +1,32 @@
+incr-set prlevel 1
+if #0=Nparams START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<random_ints seed n list 
+;;;
+;;; Linear congruential method.
+;;; produces n random integers in list (the row degs of 
+;;; a matrix list without columns).
+;;; starting with the seed, we do
+;;; x |--> ax+b 
+;;; n times.
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;
+;;; Output values:
+;;;
+;;; (discussion)
+;;;
+;;; Caveats:
+;;;
+; created ...
+START:
+(body)
+
+(clean up code)
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;

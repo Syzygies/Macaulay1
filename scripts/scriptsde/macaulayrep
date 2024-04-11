@@ -1,0 +1,74 @@
+incr-set prlevel 1
+if #0=2 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<MacaulayRep d n
+;;;
+;;; returns the dth Macaulay representation
+;;; of n; that is, returns, one by one,
+;;; the integers kd > k{d-1} >  > k1 >= 1
+;;; (as long as ki >= i)
+;;; such that 
+;;;     n = kd_C_d + k{d-1}_C_{d-1} +...
+;;; where a_C_b denotes the binomial coeff
+;;; "a choose b" 
+;;; (returned by <binomial a b n).
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters: d,n positive integers
+;;;
+;;; Output values: prints a sequence of
+;;; ints
+;;;
+;;; It would be nice to have a vector
+;;; of ints.  This could be done by 
+;;; taking powers of a variable
+;;; , concatting them on
+;;; to a vector, then taking degrees.
+;;;
+; created 12/91 DE
+START:
+if #1<1 END
+if #2<1 END
+int @n #2
+int @d #1
+int @i #1-1
+int @b1 0
+
+loop:
+;look for the last binomial <=n
+int @i @i+1
+<binomial @i #1 @b2
+if @b2>#2 gotone
+int @b1 @b2
+jump loop
+
+gotone:
+;process a coefficient 
+int @n @n-@b1
+int @d @d-1
+int @i @i-1
+shout type @i
+if @d=0 cleanup
+if #2 = 0 cleanup
+<MacaulayRep @d @n
+
+cleanup:
+kill @n @d @i @b1 @b2
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<MacaulayRep 3 9
+; 4
+; 3
+listvars
+
+<MacaulayRep 1 1
+
+
+
+
+

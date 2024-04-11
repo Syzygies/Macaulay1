@@ -1,0 +1,83 @@
+incr_set prlevel 1
+if #0=3 START
+incr_set prlevel -1
+;;; Usage:
+;;; 	<generic_skew_mat var n M
+;;;
+;;; Create a skew symmetric n x n matrix M over the current ring.
+;;; The (1,2) entry is "var".
+incr_set prlevel 1
+jump END
+;;; Parameters:
+;;;   var = variable in the current ring
+;;;   n   = an integer
+;;; Output values:
+;;;   M = output n x n skew symmetric matrix
+;;;
+;;; Caveats:
+;;;
+; created 10/12/90 M. Stillman
+START:
+int @n #2
+int @i 1
+int @first 0
+mat @M
+  @n
+  0
+
+loop:
+   if @i>@n done
+
+   sparse @zeropart
+     1
+     @i
+     ;
+
+   cat #1 @varpart
+     0
+     @first..@first+@n-@i-1
+
+   concat @zeropart @varpart
+   transpose @zeropart @col
+   concat @M @col
+
+   int @first @first+@n-@i
+   int @i @i+1
+   jump loop
+
+done:
+   transpose @M @M'
+   subtract @M' @M #3
+   setdegs #3
+     ;
+     ;
+
+; clean up
+int @zeropart 0
+int @varpart 0
+int @col 0
+
+kill @n @i @first @M @zeropart @varpart @col @M'
+
+END:
+incr_set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 10 a-z r
+<generic_skew_mat a 5 M
+type M
+
+<ring 50 a-zA-Z r
+<generic_skew_mat A 6 M
+type M
+pfaff M J
+set autocalc 1
+set autodegree 2
+res J JJ
+set autocalc 
+set autodegree
+betti JJ
+
+<ring 10 a-z r
+<generic_skew_mat a 1 M
+type M

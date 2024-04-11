@@ -1,0 +1,59 @@
+incr_set prlevel 1
+if #0=4 START
+incr_set prlevel -1
+;;; Usage:
+;;; 	<add_matrix_to_array arr arr1 arr2 add
+;;;
+incr_set prlevel 1
+jump END
+;;; Parameters:  (arr,arr1,arr2) an array of matrices
+;;;
+;;; The Array of Matrices Data Type:
+;;;
+;;; An array of matrices is a triple (M,v1,v2) of matrices.
+;;; The first coordinate is a direct sum of matrices such
+;;; that the upper left hand corner is thought of as the
+;;; first matrix, and so on.
+;;;
+;;; The second coordinate is an n by 0 matrix whose row
+;;; degrees give the ranks of the free modules which are
+;;; the sources of the maps.
+;;;
+;;; The third coordinate is an n by 0 matrix whose row de-
+;;; grees give the ranks of the free modules which are the
+;;; targets of the maps.
+;;;
+;;; Output values: (M,v1,v2) are changed to add the matrix
+;;; 		'add' as the last matrix of the array
+;;;
+; created ... 3/30/92 by M.Johnson
+START:
+
+mat @dummy_matrix
+0
+1
+
+nrows #4 @rows_to_add
+ncols #4 @cols_to_add
+
+setcoldegs @dummy_matrix
+-@cols_to_add
+transpose #2 #2
+concat #2 @dummy_matrix
+transpose #2 #2
+
+setcoldegs @dummy_matrix
+-@rows_to_add
+transpose #3 #3
+concat #3 @dummy_matrix
+transpose #3 #3
+
+dsum #1 #4 @Mtemp
+copy @Mtemp #1
+
+kill @Mtemp @dummy_matrix @rows_to_add @cols_to_add
+
+END:
+incr_set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;

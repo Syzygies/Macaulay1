@@ -1,0 +1,93 @@
+incr-set prlevel 1
+if #0>=1 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<analytic_spread I [spread]
+;;;
+;;; Prints the analytic spread of the ideal I
+;;; (that is, the (affine) dimension of the fiber of
+;;; the irrelevant ideal in the blowup of I.)
+;;; If the optional variable spread is present,
+;;; it is set equal to the analytic spread.
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;      I an ideal
+;;;
+;;; Output values:
+;;;      spread an integer
+;;;
+; created 11/9/89 DE + CH
+START:
+setring #1
+<getvars @vars
+nvars #1 @nvars
+ncols #1 @ngens
+ring-from-cols #1 @T
+a[1]-a[100]
+ring-sum @vars @T @T
+
+<blowup #1 @T @ideal_of_blowup
+
+fetch @vars @fiber
+concat @fiber @ideal_of_blowup
+std @fiber @fiber
+codim @fiber @s
+int @s @nvars+@ngens-@s
+shout echo The analytic spread of #1 is:
+shout type @s
+
+if #0=1 cleanup
+int #2 @s
+
+cleanup:
+kill @vars @nvars @ngens @T'zero @T @ideal_of_blowup 
+kill @fiber @s 
+
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+;A complete intersection has an spread
+;equal to its codimension:
+<ring 4 a-z r
+<analytic_spread r s
+type s
+<analytic_spread r 
+
+<ideal i a3 b4
+<analytic_spread i 
+
+;Determinantal examples:
+;(For the maximal minors of the generic p x q matrix,
+;the analytic spread is the affine dimension of the 
+;Grassmannian of p-planes in q-space, 
+;that is p(q-p)+1.
+
+;First a case where the catalecticant matrix
+;has the same analytic spread as the generic matrix:
+<ring 5 a-z r
+cat a m
+0 1
+0..3
+type m
+wedge m 2 m2
+<analytic_spread m2
+;5
+
+;In general the minors of the 
+;catalecticant matrix have smaller
+;analytic spread than those of the generic matrix.
+;What are these analytic spreads??
+
+<ring 18 a-z r
+<generic_mat a 3 6 m
+type m
+wedge m 3 m3
+set prlevel -10
+<analytic_spread m3
+;10.  This is the correct answer, gotten by knowing
+;that one could stop the computation in the 
+;blowup step after degree 8.

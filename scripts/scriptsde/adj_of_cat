@@ -1,0 +1,95 @@
+incr-set prlevel 1
+if #0=3 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;; 	<adj_of_cat p q j
+;;;
+;;; Produces the p by p+q-1 adjoint matrix
+;;; of a p by q catalecticant matrix, which is 
+;;; (for p=3,q=2) a matrix of the form 
+;;; 	a b 0 0 
+;;; 	0 a b 0 
+;;;		0 0 a b .
+;;; Something more general is done (slower) by
+;;; the script special_mat.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		p,q = number of rows, number of variables
+;;; Output values:
+;;;		j = p x (p+q-1) matrix 
+;;; 
+;;; The entries of j are from the first q variables of the current ring.
+;;; The matrix j is the traditional answer to the problem
+;;; of producing a matrix whose pxp minors generate the pth
+;;; power of the maximal ideal in q variables.
+
+;Last modified 4/27/89
+START:
+
+<getvars vars@
+
+ring rtemp@
+ 	; 
+	2*(#1+#2)-1
+	a[1]-a[#1+#2-1]
+	x[1]-x[#1]
+	y[1]-y[#2]
+	;
+	;
+
+;First make the catalecticant matrix:
+% cat a[1] a@
+	0..#1-1
+	0..#2-1
+
+;Now multiply it on each side by a row/col of variables:
+% cat x[1] x@
+	0
+	0..#1-1
+% cat y[1] y@
+	0..#2-1
+	0
+mult x@ a@ prod@
+mult prod@ y@ prod@
+
+;Form the adjoint of the catalecticant matrix by differentiating
+;with respect to two of the three sets of variables:
+jacob prod@ j@ x[1]..x[#1]
+jacob j@ j@ a[1]..a[#1+#2-1]
+
+;map it back to the original ring:
+setring vars@
+<zeromat 1 2*(#(1))+#(2)-1 f@
+concat f@ vars@
+ev f@ j@ #3
+setdegs #3
+	;
+	;
+kill a@ x@ y@ j@ prod@
+kill f@ rtemp@ vars@
+kill rtemp@'zero
+  
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 6 a-f r
+<adj_of_cat
+<adj_of_cat 4 5 m
+type m
+betti m
+
+;What happens when there are too few vars:
+<adj_of_cat 4 7 m
+type m
+;a b c d e f 0 0 0 0
+;0 a b c d e f 0 0 0
+;0 0 a b c d e f 0 0
+;0 0 0 a b c d e f 0
+
+<adj_of_cat 3 0 m
+type m
+

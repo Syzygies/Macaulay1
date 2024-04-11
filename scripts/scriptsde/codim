@@ -1,0 +1,82 @@
+incr-set prlevel 1
+if #0>0 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<codim m [codim]
+;;;
+;;; workaround for the codim bug:
+;;; the builtin codim thinks that the zero module
+;;; has codim = nvars; this one thinks its nvars+1
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;         m a module
+;;; Output values:
+;;;         codim, if present, an integer.
+; created 11/25/89 DE
+START:
+codim #1 @codim
+nvars #1 @nvars
+if @codim<@nvars finish
+;else test for a presentation of 0
+<is_zero #1 @t
+
+if @t>0 finish0
+int @codim @nvars+1
+
+finish0:
+kill @t
+finish:
+
+if #0=2 twovars
+shout type @codim
+jump cleanup
+
+twovars:
+int #2 @codim
+
+cleanup:
+kill @nvars @codim 
+
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 3 a-z r
+<ideal i a b
+<ideal j 1
+<ideal k a b c
+concat j i
+dsum i j m
+dsum j j m1
+std i i
+std j j
+std k k
+std m m
+std m1 m1
+
+codim i
+codim j
+;3 should be 4
+codim k
+codim m
+codim m1
+;3 should be 4
+
+;Right answers:
+<codim i
+;2
+<codim j
+;4
+<codim k
+;3
+<codim m
+;2
+<codim m1
+;4
+
+<codim m1 c
+type c
+listvars

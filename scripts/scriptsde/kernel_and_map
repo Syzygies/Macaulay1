@@ -1,0 +1,78 @@
+incr-set prlevel 1
+if #0=5 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;;     <kernel_and_map f0 a b c g
+;;;
+;;; Given f0, a, b making a commutative diagram 
+;;; (where the vertical arrows go down):
+;;;
+;;;    C1 --> A1 --> B1
+;;;    |      |      |
+;;;  c |     a|      | b
+;;;    |  g   |  f0  |
+;;;    C0 --> A0 --> B0
+;;;    |      |      |
+;;;    |      |  f   |
+;;; ker f --> A  --> B
+;;;
+;;; we compute a presentation c for the kernel of f and
+;;; the comparison map g.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		f0,a,b = matrices
+;;; Output values:
+;;;		c,g = matrices
+;;;
+;;; We first compute the relations on the generators
+;;; of the image of f0 modulo the image of b,
+;;; then a presentation of the kernel is obtained
+;;; by computing the relations on this
+;;; modulo the image of the map presenting a.
+
+;Last modified 5/14/89 DE
+START:
+
+modulo #1 #3 #5
+modulo #5 #2 #4
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+;Torsion in the cotangent sheaf of a nodal curve:
+
+;The nodal plane cubic:
+<ring 3 x-z r
+poly i y2z-x2(x-z)
+type i
+
+<cotan i Omega
+type Omega
+;The following line is necessary because of a bug (5/14/89)
+std i i    
+qring i rr
+fetch Omega Omega
+<prune Omega Omega
+<double_dual Omega N f
+<kernel_and_map
+<kernel_and_map f Omega N torsion g
+;The cotangent sheaf has torsion at the origin!
+
+type Omega
+type torsion
+type g
+
+;Now get a minimal presentation:
+<prune_and_map torsion torsion g1
+mult g g1 g2
+type torsion
+; x y 
+
+type g2
+; -1/3xy       
+; 0            
+; -2/3xz+2/3z2 

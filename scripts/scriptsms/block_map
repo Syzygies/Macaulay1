@@ -1,0 +1,48 @@
+incr_set prlevel 1
+if #0=3 START
+incr_set prlevel -1
+;;; Usage:
+;;;     <block_map lo hi f
+;;;
+;;; Create a ring map (over the current ring) which sends the given range
+;;; of variables to themselves, but sends every other variable to 0.
+incr_set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;   lo, hi = two integers specifying the range of variables.  The variables
+;;;	       are numbered starting at 1.
+;;;
+;;; Output values:
+;;;   f = 1xn matrix which is the desired ring map.
+;;;
+;;; Caveats: if lo <= 0, problems can occur.
+; last modified 5/22/89 MES
+START:
+     
+poly @curr 0  ; handle to the current ring
+nvars @curr @n
+<zeromat 1 (#1)-1 #3
+cat 0 @idenpart
+    0
+    (#1)-1..(#2)-1
+<zeromat 1 @n-(#2) @lastpart
+concat #3 @idenpart @lastpart
+     
+kill @n @idenpart @lastpart @curr
+END:
+incr_set prlevel -1
+     
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<ring 10 a-z r
+     
+<block_map
+<block_map 1 4 m1
+<block_map 3 7 m2
+<block_map 5 10 m3
+<block_map 4 12 m4
+type m1
+type m2
+type m3
+type m4
+listvars

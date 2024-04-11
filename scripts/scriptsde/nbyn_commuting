@@ -1,0 +1,58 @@
+incr-set prlevel 1
+if #0=4 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;; 	<nbyn_commuting n j A B
+;;;
+;;; Create a ring with a generic pair of  n by n commuting matrices, A, B.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;  n = size of the matrices
+;;;
+;;; Output values:
+;;;  A, B = two n by n matrices with indeterminate entries.
+;;;  j = ideal in a new ring containing the entries of the matrix AB-BA.
+;;;
+;;; The new ring has variables a[i,j] and b[i,j].
+;;;
+; created 4/24/89 MS,DE
+START:
+
+<ring (2*(#1)^2) a[1,1]-b[#1,#1] @R
+
+; create the two matrices A, B:
+
+<generic_mat a[1,1] #1 #1 #3
+<generic_mat b[1,1] #1 #1 #4
+
+; compute AB-BA
+
+mult #3 #4 @m1
+mult #4 #3 @m2
+subtract @m1 @m2 @m
+
+; notice that the trace of "m" is zero.
+
+flatten @m @m
+
+; remove an entry of "m" corresponding to the zero trace
+
+submat @m #2
+    ;
+    1..(#1)^2-1
+
+kill @m1 @m2 @m @R @R'zero
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+;; make the commuting 3 by 3 matrices ;;
+<nbyn_commuting
+<nbyn_commuting 3 j a b
+type a
+type b
+type j
+listvars

@@ -1,0 +1,114 @@
+incr-set prlevel 1
+if #0=4 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;; 	<interchange a b c1 c2
+;;;
+;;; sets c1 and c2 equal to the invertible matrices such that
+;;; c2(a0b)c1 = b0a,
+;;; where we have written a0b for the tensor
+;;; product of the matrices a and b.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		a,b = matrices
+;;; Output values:
+;;;		c1,c2 = invertible matrices
+;;;
+;;; We first form permutation matrices corresponding to the ci,
+;;; using <interchange_permutation, then
+;;; set their degrees to match a0b.
+
+;Created 3/30/89 by DE
+START:
+
+;Make the permutations:
+ncols #1 @acols
+nrows #1 @arows
+ncols #2 @bcols
+nrows #2 @brows
+
+<interchange_permutation @acols @bcols @c1
+
+;Note that the following defines the INVERSE
+;of the permutation analogous to c1
+<interchange_permutation @brows @arows @c2
+
+;Form the tensor product map, to get the degrees:
+
+;set the degrees to match those of the tensor product:
+outer #1 #2 @t
+<idencoldegs @t @t1
+setdegs @c1
+@t1
+;
+copy @c1 #3
+
+transpose @t @t'
+<idencoldegs @t' @t2'
+transpose @c2 @c2'
+setdegs @c2'
+@t2'
+;
+transpose @c2' #4
+
+kill @arows @acols @brows @bcols
+kill @c1 @c2 @t @t1 @t' @t2' @c2'
+
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 8 a-z r
+
+mat m
+3
+2
+a
+0
+0
+0
+0
+b
+
+mat n
+3
+4
+c
+0
+0
+0
+d
+0
+0
+0
+e
+0
+0
+f
+
+;optional lines:
+transpose m m
+transpose n n
+
+outer m n mtensorn
+outer n m ntensorm
+
+type m
+type n
+
+<interchange
+<interchange m n u v
+
+;compose v(mtensorn)u
+mult mtensorn u temp
+mult v temp prod
+
+type prod
+type ntensorm
+subtract prod ntensorm test
+type test
+;test should be the zero matrix!

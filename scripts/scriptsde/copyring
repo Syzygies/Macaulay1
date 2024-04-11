@@ -1,0 +1,102 @@
+incr-set prlevel 1
+if #0=2 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;;	<copyring var newring
+;;;
+;;; Makes a copy of the current ring with name newring and variable
+;;; names var[1], var[2], ... .  Puts all the vars into one reverse lex block.
+;;; Makes new ring the current ring.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;	var = a letter, used in the names of the new variables
+;;;
+;;; Returned values:
+;;; 	newring = a nearly faithful copy of the current ring
+;;;
+;;; This script is useful when two rings need to be tensored and a 
+;;; conflict of variable names must be avoided.  
+;;;
+;;; Caveats and complaints:
+;;;	The variables in the newring form a single reverse lex block,
+;;; no matter what they were in the old ring.  For this reason, if the 
+;;; current ring is a quotient ring when this script is called, a new
+;;; standard basis for the presenting ideal must be computed.  For this 
+;;; reason, and because putting all the variables in one block might 
+;;; sometimes make the degree bound undesirably low, it might be better
+;;; to either have a built-in command to do this, which would copy all
+;;; the data of the ring, or else (more flexible) make the "Monomial order"
+;;; information in the ring accessible and handleable by the rest of 
+;;; Macaulay.  For example the monomial order might be specified by a matrix
+;;; as follows:
+;;; 	Each row of the matrix would represent what is now a term in the
+;;; sequence of specification made in response to the monomial order prompt
+;;; in the ring command:  a row beginning with a c would represent the
+;;; component vector, a row beginning with a w would be followed by
+;;; integers and represent a weight vector, a row beginning with an integer
+;;; would represent a reverse lex block with that many variables (as 
+;;; currently).  There would have to be a utility to generate such matrices.
+;;; Alternately, and maybe more conveniently if less mnemonically, the code
+;;; for each type of row could be an integer (instead of c, w or nothing.)
+;;;
+;Created April 24, 1989 by DE
+START:
+
+;Gather information about the current ring.  
+;First make a variable over the current ring:
+
+<getvars @vars
+col-degs @vars @degrees
+nvars @vars @numvars
+char @vars @characteristic
+
+;Make a ring with the given number of vars, etc.
+ring #2
+	@characteristic
+	@numvars
+	#1[1]-#1[@numvars]
+	@degrees
+	c
+
+;Decide whether the defining ideal is zero, and branch accordingly:
+present-ring @vars @defideal
+ncols @defideal @test
+if @test=0 not_a_quotient
+
+; move defideal to the new ring, and recompute a standard basis.
+ev #2 @defideal @defideal
+std @defideal @defideal
+qring @defideal #2
+
+not_a_quotient:
+kill @vars @numvars @characteristic 
+kill @test @defideal @degrees
+END:
+incr-set prlevel -1
+$;;;;;;;;;;;;;;;;;;;;;;EXAMPLES;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ring r 
+3
+4
+abxy
+1 2 3 4
+w 2 c
+a
+
+ideal j
+    3
+    a4
+    a3b
+    ax
+
+qring j s
+<copyring
+<copyring u t
+pring t
+type t
+
+<ring 3 x-z r
+<copyring x s
+pring s

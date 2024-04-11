@@ -1,0 +1,185 @@
+incr-set prlevel 1
+if #0=2 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<remove_lowest_dim m m1
+;;;
+;;; sets m1 to the intersection of 
+;;; the primary components
+;;; of m excepting those of lowest dimension. (And thus to the unit
+;;; ideal if m is pure dimensional!)
+;;; Computes one free resolution to do this, (and some homology groups)
+;;; no projections, no determinants. m1 has a standard basis.
+;;;
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;         m = module
+;;; Output values:
+;;;         m1 = module with same generating set
+;;;                (same row space.) and standard basis
+;;;               computed.
+;;; Uses the results: 
+;;;     1) codim ext^d (m,R) >= d.
+;;;     2) if p is an associated
+;;; prime of m, with d:=codim p > codim m, then
+;;;         codim ext^d (m,R) = d,
+;;; and ann ext^d (m,R) \in p.
+;;;     3) if 
+;;;         codim ext^d (m,R) = d,
+;;; then there really is an associated prime 
+;;; of codimension d.
+;;;
+; created 11/16/89 DE
+START:
+;Doing the following over a new ring allows garbage collection:
+;Get a handle to the base ring of #1
+setring #1
+<getvars @oldvars
+
+;move to the new ring
+<copyring a @r
+ev @r #1 @m
+
+;compute the resolution and projective dimension:
+;the following calls nres_to_reg for the resolution.
+<res_and_dim @m @mr @d
+codim @mr.1 @codimm
+
+
+;Now look for the largest d>codim m such that
+;ext^d(m,R) has support of codim d (if any)
+
+jump samed
+
+decrement:
+int @d @d-1
+
+samed:
+
+if @d>@codimm continue
+;if we got here, m is unmixed,
+; there is no d meeting the description above, 
+;and the answer is the unit ideal over the original ring:
+setring #1
+<ideal #2 1
+forcestd #2 #2
+
+;cleanup what mess we made:
+kill @mr @d @codimm
+jump END
+
+continue:
+
+;compute a minimal presentation for ext^d(m,R):
+transpose @mr.@d @md
+transpose @mr.(@d+1) @md1
+res @md1 @md1 2
+modulo @md1.2 @md @ext
+<prune @ext @ext
+std @ext @ext
+
+;if ext = 0, decrement:
+ncols @ext @test
+if @test=0 decrement
+
+;if codim ext > d, decrement:
+codim @ext @test
+if @test>@d decrement
+
+;else use the annihilator of ext to improve #1
+<annihilator @ext @ann 
+
+ev @oldvars @ann @ann
+
+;collect all the garbage from the new ring:
+kill @codimm @m @mr @md @md1 @ext 
+kill @d @test @r @r'zero @oldvars
+
+<sat #1 @ann #2 it
+
+kill @ann
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+
+<ring 3 a-z r
+<ideal i a2 b2
+<ideal j a b c
+power j 3 j
+intersect i j i
+type i
+
+<remove_lowest_dim i ii
+;slightly faster with the iterative sat.
+type ii
+; a2 b2 
+
+<ideal i a2
+<remove_lowest_dim i ii
+type ii
+
+listvars
+
+;;;;;
+reset
+<ring 6 a-z r
+<ideal i a2 b2
+<ideal j a b c
+power j 3 j
+<ideal k a b c d
+power k 4 k
+intersect i j answer
+intersect i j k i
+type i
+<remove_low_dim i ii
+type ii
+; a2 b2 
+<remove_lowest_dim i ii
+;9.52 secs with iterative sat, 10:9 secs with non-iterative
+type ii
+type answer
+;They are the same. 
+
+; ;;;;;;;;;;;;;;;;;;
+<ring 5 a-z r
+<monomial_curve 3 4 5 i
+power i 2 i
+std i i
+type i
+<remove_lowest_dim i ii
+;2.3 secs with iterative sat, 3.6 with noniterative.
+nres ii ii
+betti ii
+; total:      1     4     3 
+; --------------------------
+;     0:      1     -     - 
+;     1:      -     -     - 
+;     2:      -     -     - 
+;     3:      -     1     - 
+;     4:      -     3     2 
+;     5:      -     -     1 
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Varieties in the nilcone of matrices:
+;Nilpotent nxn matrices:
+int n 2
+<ring n*n a-z r
+<generic_mat a n n M
+type M
+
+mult M M M2
+flatten M2 nilp
+betti nilp
+
+set timer 1
+<remove_lowest_dim nilp j
+type j
+res j j
+betti j
+space a a a a a a a
+;in case n=3
+ ;6290K  total memory requested by allocator
+ ; 302K  of requested memory not yet used
+listvars

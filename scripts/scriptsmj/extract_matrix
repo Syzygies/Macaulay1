@@ -1,0 +1,102 @@
+incr_set prlevel 1
+if #0=5 START
+incr_set prlevel -1
+;;; Usage:
+;;;   <extract_matrix M v1 v2 i M.i
+;;;     Extracts the ith matrix from the array of
+;;;     matrices (M,v1,v2).
+;;;
+incr_set prlevel 1
+jump END
+;;; Parameters:  (M,v1,v2) an array of matrices
+;;; 
+;;; The Array of Matrices Data Type:
+;;;
+;;; An array of matrices is a triple (M,v1,v2) of matrices.
+;;; The first coordinate is a direct sum of matrices such
+;;; that the upper left hand corner is thought of as the
+;;; first matrix, and so on.
+;;;
+;;; The second coordinate is an n by 0 matrix whose row
+;;; degrees give the ranks of the free modules which are
+;;; the sources of the maps.
+;;;
+;;; The third coordinate is an n by 0 matrix whose row de-
+;;; grees give the ranks of the free modules which are the
+;;; targets of the maps.
+;;;
+;;; Output values: M.i  a matrix
+;;;
+; created ... 3/25/92 by M.Johnson
+START:
+
+; Initialize these variables, in case they
+; are not used later (we still try to kill
+; them, and we don't want errors)
+int @skip_rows 0
+int @skip_columns 0
+int @starting_column 0
+int @starting_row 0
+int @num_cols 0
+int @num_rows 0
+int @i 0
+
+; if the array does not have an ith matrix,
+; return the 0 x 0 matrix
+
+nrows #2 @num_of_matrices
+if #4<@num_of_matrices+1 BRANCH1
+	mat #5
+		0
+		0
+	jump BRANCH2
+BRANCH1:
+
+; find the starting row
+
+int @i 0
+int @starting_row 1
+
+LOOP1:
+	int @i @i+1
+	if @i=#4 ENDLOOP1
+	row_degree #3 @i @skip_rows
+	int @starting_row @starting_row+@skip_rows
+	jump LOOP1
+ENDLOOP1:
+
+row_degree #3 @i @num_rows
+
+; find the starting column
+int @i 0
+int @starting_column 1
+
+LOOP2:
+	int @i @i+1
+	if @i=#4 ENDLOOP2
+	row_degree #2 @i @skip_columns
+	int @starting_column @starting_column+@skip_columns
+	jump LOOP2
+ENDLOOP2:
+
+row_degree #2 @i @num_cols
+
+submat #1 #5
+@starting_row..@starting_row+@num_rows-1
+@starting_column..@starting_column+@num_cols-1
+
+BRANCH2:
+
+kill @starting_column @num_cols @starting_row @num_rows
+kill @i @skip_columns @skip_rows @num_of_matrices
+
+END:
+incr_set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;suppose Ires is your favorite resolution
+;having length >= 3
+<comp_to_array Ires M v1 v2
+<extract_matrix M v1 v2 3 M3
+type M3

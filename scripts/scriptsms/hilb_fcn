@@ -1,0 +1,60 @@
+incr_set prlevel 1
+if #0=4 START
+incr_set prlevel -1
+;;; Usage:
+;;;	<hilb_fcn m lo hi fcn
+;;;
+;;; compute the hilbert function in degrees lo <= d <= hi
+;;; of the module M presented by the matrix "m".
+;;; The resulting dimensions are placed into the column degrees of the
+;;; result matrix "fcn".
+;;;
+incr_set prlevel 1
+jump END
+;;; Parameters:
+;;;    m = matrix presenting a module M.
+;;;    lo, hi = integers.
+;;;
+;;; Output values:
+;;; fcn = result 0 by (hi-lo+1) matrix of zeros whose column degrees are
+;;;	  the desired dimensions.
+;;;
+;;; To view the hilbert function, use "col_degs fcn".
+; last modified 7/6/89 MES
+START:
+     
+std #1 @m
+int @d #2
+ideal @fcn
+    0
+loop:
+    if (@d>#3) byebye
+     
+    k_basis @m @md
+	@d
+	@d
+    ncols @md @n
+    poly @f 0
+    setdegs @f
+	0
+	@n
+    concat @fcn @f
+    int @d @d+1
+    jump loop
+     
+byebye:
+     
+copy @fcn #4
+shout col_degs #4
+     
+kill @m @d @md @n @fcn @f
+     
+END:
+incr_set prlevel -1
+     
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+;; example 1: rational quartic in P3
+<ring 4 a-d r
+<monomial_curve 1 3 4 j
+<hilb_fcn
+<hilb_fcn j 0 20 fcn

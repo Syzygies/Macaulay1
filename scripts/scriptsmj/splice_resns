@@ -1,0 +1,277 @@
+incr_set prlevel 1
+if #0=11 START
+incr_set prlevel -1
+;;; Usage:
+;;; 	<splice_resns F F1 F2 G G1 G2 H H1 H2 phi psi
+;;;
+;;;	Given a short exact sequence of modules
+;;;		0 --> M' --> M --> M'' --> 0
+;;;     and resolutions for M' and M'', construct
+;;;     a resolution for M.  The resolutions for
+;;;     M' and M'' do not have to be minimal, but
+;;;     even if they are, the resolution for M
+;;;     is not necessarily minimal.
+;;;
+incr_set prlevel 1
+jump END
+;;; Parameters: (F,F1,F2) - A resolution for M',
+;;;	given as an array of matrices
+;;;		(G,G1,G2) - A presentation for M,
+;;;	given as an array of matrices
+;;;		(H,H1,H2) - A resolution for M'',
+;;;	given as an array of matrices
+;;;		phi - a matrix giving the map from
+;;;	F/0 to G/0 which induces the map from M'
+;;;	to M
+;;;		psi - a matrix giving the map from
+;;;	G/0 to H/0 which induces the map from M
+;;;     to M''
+;;;
+;;; Output values: (G,G1,G2) is altered and added
+;;;	to in order to give a resolution of M.
+;;;
+;;; The Array of Matrices Data Type:
+;;;
+;;; An array of matrices is a triple (M,v1,v2) of matrices.
+;;; The first coordinate is a direct sum of matrices such
+;;; that the upper left hand corner is thought of as the
+;;; first matrix, and so on.
+;;;
+;;; The second coordinate is an n by 0 matrix whose row
+;;; degrees give the ranks of the free modules which are
+;;; the sources of the maps.
+;;;
+;;; The third coordinate is an n by 0 matrix whose row de-
+;;; grees give the ranks of the free modules which are the
+;;; targets of the maps.
+
+; created ... 6/2/92  M. Johnson
+START:
+
+<extract_matrix #1 #2 #3 1 @f_map
+copy #4 @g_map
+<extract_matrix #7 #8 #9 1 @h_map
+
+;;; Check exactness at M'
+
+	ncols #(10) @rk_F0
+	mat @zeromap
+		@rk_F0
+		0
+	<homology @f_map @g_map @zeromap #(10) @homology
+	<is_zero @homology @t
+	if @t=0 EXACT1
+		shout echo 'Sequence not exact at Mprime'
+		jump END
+	EXACT1:	
+
+;;; Check exactness at M
+
+	<homology @g_map @h_map #(10) #(11) @homology
+	<is_zero @homology @t
+	if @t=0 EXACT2
+		shout echo 'Sequence not exact at M'
+		jump END
+	EXACT2:
+
+;;; Check exactness at M''
+
+	nrows #(11) @rk_H0
+	mat @zeromap
+		0
+		@rk_H0
+	mat @zeropres
+		0
+		0
+	<homology @h_map @zeropres #(11) @zeromap @homology
+	<is_zero @homology @t
+	if @t=0 EXACT3
+		shout echo 'Sequence not exact at M double prime'
+		jump END
+	EXACT3:
+
+;;; The map psi from G/0 to H/0 splits, mod H/1.
+;;; Compute such a splitting.
+
+	ncols #(11) @rows_to_retain
+	nrows #(11) @nrows
+
+	mat @sum_map
+		@nrows
+		0
+	concat @sum_map #(11) @h_map
+	lift_std @sum_map @sum_map
+
+	iden @nrows @iden
+	lift @sum_map @iden @lift1
+
+	submat @lift1 @lift2
+		1..@rows_to_retain
+		;
+
+
+;;; Now compose with @h1 to get the map
+;;; from H/1 to G/0
+
+	mult @lift1 @h_map @lift3
+
+;;; The map from H/1 to G/0 lifts through
+;;; phi, the map from F/0 to G/0, mod G1.  Compute
+;;; such a lifting.
+	nrows #(10) @nrows
+	ncols #(10) @rows_to_retain
+
+	mat @sum_map
+		@nrows
+		0
+	concat @sum_map #(10) @g_map
+	lift_std @sum_map @sum_map
+	lift @sum_map @lift3 @lift4
+
+	submat @lift4 @delta_map
+		1..@rows_to_retain
+		;
+
+;;; Now the first set of maps f_map, h_map
+;;; and delta_map are set up.
+
+;;; Clear out the (G,G1,G2) array of matrices
+;;; to make way for mapping cylinder complex.
+	mat #4
+		0
+		0
+	mat #5
+		0
+		0
+	mat #6
+		0
+		0
+
+	int @i 1
+
+;;; the length of the mapping cylinder is the
+;;; larger of the lengths of the two known res-
+;;; olutions
+
+	nrows #2 @max_length
+	nrows #5 @h_length
+	if @max_length>@h_length LOOP
+		int @max_length @h_length
+
+	LOOP:
+		nrows @f_map @nrows
+		mat @top
+			@nrows
+			0
+		concat @top @f_map @delta_map
+
+		nrows @h_map @nrows
+		ncols @f_map @ncols
+		<zeromat @nrows @ncols @bottom
+		concat @bottom @h_map
+
+		transpose @top @top
+		transpose @bottom @bottom
+		concat @top @bottom
+		transpose @top @cyl_map
+
+		<add_matrix_to_array #4 #5 #6 @cyl_map
+
+		if @i=@max_length EOFLOOP
+		int @i @i+1
+
+		<extract_matrix #7 #8 #9 @i @h_map
+		mult @delta_map @h_map @composition
+		lift_std @f_map @f_map
+		lift @f_map @composition @delta_map
+		<extract_matrix #1 #2 #3 @i @f_map
+	
+		jump LOOP
+	EOFLOOP:
+	
+kill @f_map @g_map @delta_map @h_map @composition @i
+kill @cyl_map @top @bottom @iden
+kill @nrows @ncols @h_length @max_length
+kill @sum_map @rows_to_retain
+kill @lift1 @lift2 @lift3 @lift4
+
+END:
+incr_set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+<2byn 1 2 1 2 0 M I
+
+res R Rres
+<comp_to_array Rres F F1 F2
+
+<ideal J b2-ac d
+nres J Jres
+<comp_to_array Jres H H1 H2
+
+<ideal phi d
+<ideal psi 1
+
+<splice_resns F F1 F2 I I1 I2 H H1 H2 phi psi
+
+
+% <pres F F1 F2
+--------------------------------------------------- 
+; a b c d 
+--------------------------------------------------- 
+; -d 0  0  -c 0  -b 
+; 0  -d 0  0  -c a  
+; 0  0  -d a  b  0  
+; a  b  c  0  0  0  
+--------------------------------------------------- 
+; 0  -c 0  -b 
+; 0  0  -c a  
+; 0  a  b  0  
+; -b d  0  0  
+; a  0  d  0  
+; c  0  0  d  
+--------------------------------------------------- 
+; -d 
+; -b 
+; a  
+; c  
+--------------------------------------------------- 
+
+% <pres H H1 H2
+--------------------------------------------------- 
+; d b2-ac 
+--------------------------------------------------- 
+; -b2+ac 
+; d      
+--------------------------------------------------- 
+
+% <pres I I1 I2
+--------------------------------------------------- 
+; a b c d 1 0     
+; 0 0 0 0 d b2-ac 
+--------------------------------------------------- 
+; -d 0  0  -c 0  -b 0      
+; 0  -d 0  0  -c a  -b     
+; 0  0  -d a  b  0  a      
+; a  b  c  0  0  0  0      
+; 0  0  0  0  0  0  -b2+ac 
+; 0  0  0  0  0  0  d      
+--------------------------------------------------- 
+; 0  -c 0  -b 
+; 0  0  -c a  
+; 0  a  b  0  
+; -b d  0  0  
+; a  0  d  0  
+; c  0  0  d  
+; 0  0  0  0  
+--------------------------------------------------- 
+; -d 
+; -b 
+; a  
+; c  
+--------------------------------------------------- 
+
+
+
+

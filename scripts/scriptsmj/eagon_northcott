@@ -1,0 +1,138 @@
+incr_set prlevel 1
+if #0=4 START
+incr_set prlevel -1
+;;; Usage:
+;;; <eagon_northcott M w v1 v2
+;;;
+;;;   Return in (w,v1,v2) the Eagon Northcott complex
+;;; associated with the matrix M
+;;;
+;;; The method is to resolve the ideal of generic maximal minors
+;;; and then use the 'ev' evaluate command to give us the cor-
+;;; responding matrices.
+;;;
+incr_set prlevel 1
+jump END
+;;; Parameters: M a matrix of forms all of the same degree.
+;;;
+;;; Output values: (w,v1,v2) an array of matrices
+;;;
+;;; The Array of Matrices Data Type:
+;;;
+;;; An array of matrices is a triple (M,v1,v2) of matrices.
+;;; The first coordinate is a direct sum of matrices such
+;;; that the upper left hand corner is thought of as the
+;;; first matrix, and so on.
+;;;
+;;; The second coordinate is an n by 0 matrix whose row
+;;; degrees give the ranks of the free modules which are
+;;; the sources of the maps.
+;;;
+;;; The third coordinate is an n by 0 matrix whose row de-
+;;; grees give the ranks of the free modules which are the
+;;; targets of the maps.
+;;;
+; created ... 3/25/92 by M.Johnson
+START:
+
+ncols #1 @rkF
+nrows #1 @rkG
+
+int @numvars @rkF*@rkG
+<ring @numvars a-z @S
+<generic_mat a @rkG @rkF @A
+
+wedge @A @rkG @I
+std @I @I
+nres @I @Ires
+
+<comp_to_array @Ires @M #3 #4
+
+transpose #1 @Mtransp
+flatten @Mtransp @f
+
+setdegs @f
+	0
+	;
+col_degs @f @fdegs
+max @fdegs @max
+
+setdegs @f
+0
+@max
+
+; @f is now the map from the generic ring
+; to the ring over which M is defined.
+
+
+ev @f @M #2
+
+mat @degs
+	0
+	0
+mat @degs1
+	1
+	0
+setdegs @degs1
+	0
+	;
+transpose @degs @degs
+transpose @degs1 @degs1
+concat @degs @degs1
+transpose @degs @degs
+transpose @degs1 @degs1
+
+int @i 0
+
+LOOP:
+	if (@rkG-1+@i=0)*(@i=0) B1
+		<binomial @rkG-1+@i @i @rk_sym_part
+		jump B2
+	B1:
+		int @rk_sym_part 1
+	B2:
+	<binomial @rkF @rkG+@i @rk_alt_part
+	int @tot_rk @rk_sym_part*@rk_alt_part
+
+	mat @degs1
+		@tot_rk
+		0
+	setdegs @degs1
+		(@max*(@i+@rkG))
+		;
+
+	transpose @degs @degs
+	transpose @degs1 @degs1
+	concat @degs @degs1
+	transpose @degs @degs
+	transpose @degs1 @degs1
+
+	int @i @i+1
+	if @i<=@rkF-@rkG LOOP
+nrows @degs @ndegs
+submat @degs @rdegs
+	1..@ndegs
+	;
+submat @degs @cdegs
+	2..@ndegs
+	;
+setdegs #2
+	@rdegs
+	@cdegs
+
+kill @f @M @Mtransp @Ires @I @rkG @rkF
+kill @numvars @S @S'zero @A @fdegs @max
+kill @rdegs @cdegs @degs @degs1 @ndegs @i
+kill @rk_sym_part @rk_alt_part @tot_rk
+
+END:
+incr_set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+<2byn 2 3 4 0 0 M I
+<eagon_northcott M v v1 v2
+type v
+row_degs v1
+row_degs v2
+

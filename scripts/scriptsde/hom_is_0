@@ -1,0 +1,92 @@
+incr-set prlevel 1
+if #0=2 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;; 	<hom_is_0 a b
+;;;
+;;; The output is the null matrix
+;;; iff Hom is 0.  Useful for
+;;; checking whether an element is a
+;;; nonzerodivisor (but the script NZD does it a different way.)
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		a,b modules
+;;;
+;;; This version of the script hom is optimized for testing
+;;; hom for 0.
+;;; Modulo is used in place of the
+;;; call to <kernel in the script Hom, and reduce is used
+;;; to make the test.  For further description, see hom.
+
+;Last modified 2/20/89 DE
+START:
+
+;First we compute presentations g0 and g1 of
+;	Hom(A0,b)  and  Hom(A1,b)
+;from the presentation of b.
+
+<idenrowdegs #1 @A0
+<idencoldegs #1 @A1
+<idenrowdegs #2 @B0
+
+transpose @A0 A0_dual@
+transpose @A1 A1_dual@
+
+outer A0_dual@ #2 g0@
+outer A1_dual@ #2 g1@
+
+;Next we make the comparison map that comes
+;from the presentation of a:
+
+transpose #1 a'@
+outer a'@ @B0 f@
+
+modulo f@ g1@ kc@
+
+;Now test whether the image of kc@ is contained in
+;that of g0@:
+std g0@ g0@
+reduce g0@ kc@ red@
+
+;Report:
+incr-set prlevel -10
+;Hom is 0 iff the following matrix consists of zeros:
+type red@
+incr-set prlevel 10
+
+kill a'@ @A0 @A1 @B0
+kill  A1_dual@ A0_dual@
+kill g0@ g1@ f@
+kill kc@ red@
+
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 4 a-z s
+poly X a+b+c+d
+
+;An ideal n1 mod which X  is a nonzerodivisor:
+ideal n1
+6
+ab
+ac
+ad
+bc
+bd
+cd
+
+<hom_is_0
+<hom_is_0 X n1
+
+
+;An ideal n2 mod which X is not a nonzerodivisor:
+transpose s s'
+mult s' n1 n2
+flatten n2 n2
+
+<hom_is_0 X n2

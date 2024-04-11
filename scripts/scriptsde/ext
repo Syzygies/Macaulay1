@@ -1,0 +1,130 @@
+incr-set prlevel 1
+if #0=4 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;; 	<ext n a b c
+;;;
+;;; A presentation of the module
+;;; Ext^n(a,b) is put into the
+;;; variable c.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		n = non-negative integer
+;;;		a, b = modules
+;;; Output values:
+;;;		c = module
+;;;
+;;; A presentation of the module
+;;; Ext^n(A,B) is put into the
+;;; variable c, where A and B are presented by a and b.
+;;;
+;;; We compute Ext as the homology
+;;; of the complex Hom(F*A,B), where F*A is a resolution of A.
+;;;
+;;; If n=0, then Hom is used instead.
+;Last modified 2/20/89 DE
+START:
+
+;Shortcut if n=0:
+if #1=0 HOM
+
+
+;Create the necessary maps:
+;First the desired part of the resolution of A:
+<res #2 a@ #1+1
+
+
+;Next the presentations g_n and g_nplus1 of
+;Hom(FnA,B) and Hom(F(n+1)A,B)
+
+<idencoldegs a@.#1 A_n@
+<idencoldegs a@.(#1+1) A_nplus1@
+transpose A_n@ A_n_dual@
+transpose A_nplus1@ A_nplus1_dual@
+outer A_n_dual@ #3 g_n@
+outer A_nplus1_dual@ #3 g_nplus1@
+
+
+;Form the maps f_n and f_nplus1
+;in the complex Hom(F*A,F0B):
+
+transpose a@.#1 a_n_dual@
+transpose a@.(#1+1) a_nplus1_dual@
+<idenrowdegs #3 B0@
+
+outer a_n_dual@ B0@ f_n@
+outer a_nplus1_dual@ B0@ f_nplus1@
+
+; ;;;;;;;;;;;DEBUG;;;;;;;;;;
+;echo "homology g_n@ g_nplus1@ f_n@ f_nplus1@ #4"
+
+;putmat g_n@ 
+;putmat g_nplus1@ 
+;putmat f_n@ 
+;putmat f_nplus1@ 
+;putmat #4
+;
+; ;;;;;;;;;;;DEBUG;;;;;;;;;;
+
+<homology g_n@ g_nplus1@ f_n@ f_nplus1@ #4
+
+;optional
+;<prune #4 #4
+
+kill a@
+kill A_n@ A_nplus1@ B0@
+kill A_n_dual@ A_nplus1_dual@
+kill a_n_dual@ a_nplus1_dual@
+kill f_n@ f_nplus1@
+kill g_n@ g_nplus1@
+
+if #1>0 END
+HOM:
+<hom #2 #3 #4
+
+END:
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+<ring 4 a-z r
+<ideal i a
+
+;Note that "r" is a presentation of the 
+;residue class field
+<ext
+<ext 3 r i e
+type e
+
+<prune e f
+type f
+; a c b d    ;the residue class field
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+<ring 3 a-z r3
+
+;ext works correctly even if the index is large:
+<ext 4 r3 r3 e
+type e
+; ;;;;;;;;;;;;;;;;;;;;
+;bug in ext from Sheldon Katz, 7/92
+;Crashes some -- but not all -- machines.
+;Crash comes in the "modulo" called by "homology",
+;gives an "illegal reference" or some such.
+ring r
+;
+3
+xyt
+2 1 2
+;
+
+<ideal i tx2+t2y2 t2xy
+res i j
+syz i -1 k
+set prlevel -2
+<ext 1 k i ext1

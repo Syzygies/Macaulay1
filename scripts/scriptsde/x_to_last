@@ -1,0 +1,115 @@
+incr-set prlevel 1
+if #0=3 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;; 	<x_to_last x f g
+;;;
+;;; If R is the base ring of x and S is the current ring, the
+;;; script returns inverse ring maps f: R -->S and g: S-->R.  The
+;;; effect of f is to make the linear forms in "x" act as the
+;;; last variables.  Thus after
+;;; 	<x_to_last x f g
+;;;		ev f m m1,
+;;; the last variable of S will act on m1 the way the linear
+;;; form which is the last entry of x acts on m.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		x = 1 x m matrix of linear forms over a ring with no more
+;;; 		variables than the current ring.
+;;; Output values:
+;;;		f = ideal of the current ring with m linear forms, where m
+;;;			is the number of variables of the base ring of x
+;;;		g = ideal of the base ring of x, again with m variables.
+;;;
+;;; typical usage: To saturate the ideal i (defined over r, 
+;;; with last variable z and reverse lex order) 
+;;; with respect to a linear form x we might do
+;;; 	<x_to_last x f g
+;;; 	ev f i i1
+;;; 	std i1 i1
+;;;	 	sat i1 i1 z
+;;; 	ev g i1 i1
+;;;
+;;; Useful for checking whether x is a nonzerodivisor, using sat.
+;;; See NZD.
+;;;
+;;; The idea is to find an nxn scalar invertible matrix G
+;;; whose last m columns consist of the coefficients of x in terms
+;;; of the variables of R.  The map g is defined by the ideal
+;;; (z1, ... zn)G, where the zi are the variables of R.
+;;; If we set, 
+;;; F := G^(-1)
+;;; then the map f is defined by the ideal 
+;;; (y_1,...,y_n)F, where the y_i are the variables of S.
+
+;modified 2/20/89 DE
+START:
+;modified 4/17/89 MS
+;revised, after "xToLast" and "split", 5/7/89 DE
+
+;Get a handle to the current ring, S:
+<getvars Svars@
+
+setring #1 ; The ring R
+<getvars Rvars@
+
+;Express x in terms of Rvars@,
+;via a scalar matrix G1@:
+contract Rvars@ #1 G1@       ;The cols of G1@ are the coefs of x
+
+;compute a complement to G1@
+<complement G1@ G@
+
+;Put them together and find g:
+concat G@ G1@                ;The last m cols of G@ are the coeffs of x
+mult Rvars@ G@ #3
+
+;now compute f from the inverse:
+<inverse G@ F@
+ev Svars@ F@ F@
+mult Svars@ F@ #2
+
+kill Rvars@ Svars@ F@ G1@ G@
+END:
+incr-set prlevel -1
+
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+reset
+set prlevel 0
+
+<ring 8 a-h r
+
+ideal y
+1
+a+b+c
+
+ideal j
+    2
+    a-c+d
+    b-e
+
+<x_to_last
+<x_to_last y ff gg
+type ff
+type gg
+ev ff y z
+type z
+ev gg z y1
+type y1
+
+<x_to_last j ff gg
+ev ff j j1
+type j1
+ev gg j1 j2
+type j2
+
+ev ff gg test
+type test
+
+ev gg ff test1
+type test1

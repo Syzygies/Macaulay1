@@ -1,0 +1,85 @@
+incr-set prlevel 1
+if #0=3 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;;     <interchange_permutation a b c
+;;;
+;;; sets c equal to the
+;;; permutation matrix of the permutation taking the set
+;;; A x B (where a,b are the cardinalities of A,B) in lex order to the
+;;; same set in the order that corresponds to the lex order
+;;; on B x A
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		a,b = positive integers, the size of the sets A,B
+;;; Output values:
+;;;		an invertible ab x ab matrix
+;;;
+;;; It might be more efficient to use the contract command
+;;; than the lift command as is done here
+;Created 3/30/89 by DE
+START:
+
+;make a module over the current ring
+;so that one can return
+;c as a matrix over that ring:
+
+cat 0 @old
+0
+0
+
+ring @r
+;
+#1+#2
+x[1]-x[#1]
+y[1]-y[#2]
+;
+;
+
+cat x[1] @m
+0
+0..#1-1
+cat y[1] @n
+0
+0..#2-1
+
+transpose @n @n
+mult @n @m @t
+flatten @t @t1
+
+transpose @t @t'
+flatten @t' @t2
+
+;Now t1 and t2 are related by the right permuation!
+;We'll compute the permutation with a lift
+set autodegree 2
+set autocalc 1
+
+lift-std @t1 @T1
+lift @T1 @t2 @c
+
+set autodegree 0
+set autocalc -1
+
+setring @old
+fetch @c #3
+
+kill @old @m @n @t @t1 @t2 @t' @T1 @c @r'zero @r
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+
+<interchange_permutation
+<interchange_permutation 2 3 m
+type m
+
+;Test with the inverse:
+
+<interchange_permutation 3 2 m1
+mult m m1 test
+type test

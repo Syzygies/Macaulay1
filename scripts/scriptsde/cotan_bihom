@@ -1,0 +1,152 @@
+incr-set prlevel 1
+if #0=4 START 
+incr-set prlevel -1
+
+;;; Usage:
+;;; 	<cotan_bihom x[0]..x[r] y[0]..y[s] ideal Omega
+;;;
+;;; This script sets Omega to the graded module
+;;; representing the cotangent sheaf of the
+;;; variety defined by the given bihomogeneous ideal
+;;; in Pr x Ps.
+incr-set prlevel 1
+jump END
+;;;
+;;; Parameters:
+;;;		x[0]..x[r] y[0]..y[s] = variable lists
+;;;		ideal = 1xn matrix, bihomoageneous over the base ring
+;;;				which is a poly ring in the 2 sets of vars
+;;;				x[0]..x[r] y[0]..y[s].
+;;; Output values:
+;;;		Omega = module over the base ring of ideal
+;;; 
+;;; The matrix Omega returned is actually a presentation 
+;;; over the polynomial ring of the module 
+;;; coker I/I^2 --> OmegaP,
+;;; where I is the given ideal, in the polynomial
+;;; ring R, and OmegaP is the module corresponding
+;;; to the cotangent sheaf of the ambient projective
+;;; space, restricted to the subscheme Z(I).  OmegaP
+;;; is computed as the kernel of the map
+;;; (R/I)(-1)^(n) --> R/I,
+;;; where n is the number of variables of R,
+;;; so it is a module of depth 2.
+;;;	
+;;;		One would really like to compute the module 
+;;; \sum H^0( Omega(n) ) directly here.  Of course it can be
+;;; obtained from the computed Omega by using 
+;;; <cohomology 0 Omega j Omega'
+;;; but one actually has the desired module already in
+;;; some cases:
+;;; 	If I is a prime then I^2 is primary iff the
+;;; map I/I^2 --> OmegaP is a
+;;; monomorphism.  If this is satisfied and R/I has
+;;; depth >=1, then (sinced OmegaP then has depth >=1) the
+;;; computed module will have depth >= 2 if depth I/I^2 >= 3,
+;;; and depth >= 1 if depth I/I^2 >= 2.
+;;; Thus if I is a complete intersection, and
+;;; depth R/I >= 3 (resp 2) then depth Omega >= 2 (resp 1).
+;;;
+;;; Caveats:  This script is not as useful as it might be
+;;; because Macaulay has no good way of keeping track of the 
+;;; bigrading, so the bidegrees of the generators of Omega
+;;; must be computed by hand from the matrices in the resolution
+;;; of vars@. (That is, from the way that the presentation for 
+;;; OmegaP is computed.)
+
+;Created 2/28/89 DE Revised 5/13/89 DE
+START:
+setring #3
+
+;Form the 2x(r+s+2) matrix vars which is the direct sum of the
+;two matrices containing the two sets of variables: its kernel
+;is the bigraded module corresponding to the cotangent sheaf
+;of projective space:
+<getvars @allvars
+
+;The first set of vars:
+jacob @allvars @firstvars #1
+mult @allvars @firstvars @firstvars
+
+;The second set of vars:
+jacob @allvars @secondvars #2
+mult @allvars @secondvars @secondvars
+
+;combine them.
+dsum @firstvars @secondvars vars@
+
+
+;Next compute a presentation of I
+res #3 I@ 2
+
+;Form the Jacobian matrix j@ which will induce the map
+;I/I^2 --> Omega
+jacob I@.1 jfirst@ #1	;cols correspond to vars, rows to functions
+jacob I@.1 jsecond@ #2
+copy jfirst@ j@
+concat j@ jsecond@
+
+transpose j@ j@
+
+qring I@.1 q@
+
+;compute the presentation m of I/I^2 over q
+ev q@ I@.2 m@
+
+;Move the jacobian matrix to q
+ev q@ j@ j@
+
+;compute Omega, which will be presented over q
+;by vars.3
+ev q@ vars@ vars@
+res vars@ vars@ 3
+
+;Now compute the map I/I^2 --> Omega
+lift vars@.2 j@ k@
+
+;form the presentation k of the cotangent sheaf
+concat k@ vars@.3
+
+;now lift back to the original ring
+
+ev @allvars k@ k@
+tensor k@ #3 #4
+
+kill @allvars @firstvars @secondvars vars@ I@ m@ j@ k@
+kill jfirst@ jsecond@  q@'zero q@
+
+END:
+incr-set prlevel -1
+
+$;;;;;;;;;;;;;; TEST SECTION ;;;;;;;;;;;;;;;
+reset
+; The cotangent sheaf of P2 embedded as the diag in P2 x P2
+
+
+<ring 6 stuxyz r
+
+;the ideal of the diagonal:
+<generic_mat s 2 3 i
+type i
+wedge i 2 i2
+flatten i2 i2 
+type i2
+
+<cotan_bihom
+<cotan_bihom s..u x..z i2 Om
+<prune Om Om
+res Om Om
+betti Om
+; total:      9    22    18     6     1 
+; --------------------------------------
+;     2:      9    22    18     6     1 
+;Note depth 2 with respect to the maximal ideal.
+;An unusual view of the cotangent sheaf!
+;The meaning is:  O(a,b) on P2xP2 restricts to O(a+b) on P2;
+;and "total degree 2" over the bihomogeneous ring is the sum of
+;bidegrees (2,0), (1,1), and (0,2).  So the fact that 
+;	h^0 ( Omega_{P2}(1) ) = 0 
+;shows that Omega as a bigraded module will be 0 in total degree1,
+;while in total degree 2 it will consist of 3 copies of 
+;	H^0 ( Omega_{P2}(2) ) ,
+;which is 3-dimensional, for a total of 9 dimensions, as shown.

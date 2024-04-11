@@ -1,0 +1,71 @@
+incr_set prlevel 1
+if #0=4 START
+incr_set prlevel -1
+;;; Usage:
+;;;   <check_complex M v1 v2 flag
+;;; Checks whether the array passed by the triple (M,v1,v2)
+;;; is actually a complex by composing maps and
+;;; checking whether the resulting matrix is zero.
+;;;
+incr_set prlevel 1
+jump END
+;;; Parameters: (M,v1,v2) an array of matrices.
+;;;
+;;; The Array of Matrices Data Type:
+;;;
+;;; An array of matrices is a triple (M,v1,v2) of matrices.
+;;; The first coordinate is a direct sum of matrices such
+;;; that the upper left hand corner is thought of as the
+;;; first matrix, and so on.
+;;;
+;;; The second coordinate is an n by 0 matrix whose row
+;;; degrees give the ranks of the free modules which are
+;;; the sources of the maps.
+;;;
+;;; The third coordinate is an n by 0 matrix whose row de-
+;;; grees give the ranks of the free modules which are the
+;;; targets of the maps.
+;;;
+;;; Output values: flag is set to zero if it is a complex
+;;;			and to the step at which it fails
+;;;			to be a complex otherwise.
+;;;
+; created ... 3/25/92
+START:
+
+nrows #2 @length
+
+int @j 0
+
+LOOP1:
+	int @j @j+1
+	if @j=@length-1 ENDLOOP
+	row_degree #2 @j @ranka
+	row_degree #3 @j+1 @rankb
+	if @ranka>@rankb FAIL
+	if @ranka<@rankb FAIL
+	<extract_matrix #1 #2 #3 @j @M1
+	<extract_matrix #1 #2 #3 @j+1 @M2
+	mult @M1 @M2 @M3
+	std @M3 @M3
+	ncols @M3 @gens
+	if @gens=0 LOOP1 FAIL
+ENDLOOP:
+	int #4 0
+	jump EXIT
+FAIL:
+	int #4 @j
+EXIT:
+
+kill @j @gens @M1 @M2 @M3 @ranka @rankb @length
+
+END:
+
+incr_set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+<2byn 1 2 0 2 1 0 2 0 M I
+<eagon_northcott M w v1 v2
+<check_complex w v1 v2 flag
+

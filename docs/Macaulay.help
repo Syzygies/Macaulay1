@@ -1,0 +1,1802 @@
+
+Macaulay commands (version 3.0) by group:
+This list is current as of 5/1/89.
+
+@Syntax formats for arguments to commands.
+
+~identifiers
+
+An identifier is a sequence of characters, which denotes a user
+defined variable, such as a ring, integer, matrix, or computation.
+The first character must be a letter (upper case or lower case), or
+one of the following characters:
+	@, ', _
+Subsequent characters of the identifer must be either digits (0, ..., 9)
+or a character from the above list.  
+
+Examples:
+	a'mine
+	@veronese
+	my_matrix
+	m0128
+	a'
+
+An indexed identifier is an identifier as above, followed by the
+character ".", followed by an integer expression.
+
+Examples: 
+	a.3
+	a.(2*i+1)	;; where "i" is an integer variable
+
+Notes:
+    (1) @ is used for LOCAL variables inside scripts (command files):
+Inside of a script, @ is expanded to @nn@, where nn is the "level" of this
+script.  Thus name conflicts will not occur if all local variables in a
+script contain a @.
+    (2) Wherever an identifier is expected, enclosing it in braces is
+always allowed.  The only time it is required is for matrix or
+polynomial variables occuring in a polynomial expression.  So the
+identifiers a_matrix and {a_matrix} represent the same variable.
+    (3) Lower case and upper case letters are distinct, thus the
+identifiers mymat and MyMat are distinct.
+    (4) There is a limit on the length of an identifier, but this
+limit is larger than 50 characters.
+
+~indeterminates
+
+The names of indeterminates in rings have a special syntax, and never
+conflict with the names of user defined variables (e.g. one can have a
+matrix called "a", and an indeterminate in its base ring, called "a" as well).
+
+An indeterminate is either
+    (a) a single letter, upper and lower case being distinct, or
+    (b) a single letter, indexed by a set of integers, or
+    (c) of the form: |any_string|, consisting of a string of
+characters and enclosed in vertical bars.
+
+Examples: a, A, F[1,2,3], z[-1, 2*i], |a+2|.  Notice that indexing is
+accomplished using brackets, and integer expressions are allowed as
+indices.  Some characters are not allowed inside indeterminates of type (c):
+spaces, @, $, ? will cause problems, and should not be used.
+
+~integers
+
+Integer expressions are what one would usually expect: 
+
+    (1) Operators allowed, in increasing precedence
+	+, -, 
+	*, / (integer division), & (remainder), 
+	+, - unary operators
+	^ (exponentiation, ** also allowed)
+
+    (2) parentheses are allowed
+    (3) If an identifier represents an integer variable, this identifier
+	may occur in the expression as well (with or without the enclosing 
+	braces).
+
+Examples:
+	a+(2-i)^4
+	a*(a-1)*(a-2)/6
+	a+(a+(hi'there+1)^3)**3
+
+IMPORTANT NOTE: no SPACES are allowed in ANY expression
+
+~polynomials
+
+Polynomial expressions are very similar to integer expressions with a few
+important differences:
+    (1) There are two name spaces: user defined variables, and
+indeterminates in the current ring.  To keep these separate, in order
+to use a user defined matrix variable it MUST be enclosed in braces.
+On the other hand, inside exponents or indexed indeterminates, only
+integers are expected, and so the braces are optional.
+    (2) / and & refer to polynomial reduction, w.r.t. the monomial
+order in the current ring.
+    (3) Certain abbreviations are allowed:
+	integer indeterminate ==> integer * indeterminate
+	indet integer ==> indet ^ integer
+	integer ( ==> integer * (
+	FINISH THIS LIST.
+    (4) If "m" is a user defined matrix, then {m} refers to the (1,1)
+entry of this matrix.
+
+Examples:
+	a2-3bc+d3 ==> a^2 - 3*b*c + d^3
+	{f}^2/{f} = {f}, if f is a non-zero polynomial.
+	a[i]*{f}-a[i+1]*{f}^2
+
+The abbreviations in (3) are allowed mainly because this is the format
+that polynomials are displayed in Macaulay, and one wants to be able
+to input polynomials which Macaulay has displayed.
+
+~integer lists
+
+Integer lists are used throughout Macaulay for various reasons.  The
+most important use is that each matrix has an integer list describing
+it's row degrees and another describing it's column degrees.  Other uses
+include: (1) weights of the variables in a polynomial ring,
+	 (2) monomial orders and weight functions.
+	 (3) in "submatrix" command, integer lists describe which rows
+	     and columns to select.
+
+An integer list is input as a sequence of "items", separated by spaces.
+Each item is one of:
+	(1) integer expression
+	(2) expr..expr, where each "expr" is an integer expression. If
+the values of the expressions are m, n respectively, this is
+equivalent to typing in the integers m m+1 m+2 ... n.  (if n < m, then
+no integers are added to the list.
+	(3) expr:expr, where each "expr" is an integer expression.  If
+the values of the expressions are m, n respectively (i.e. m:n), this
+is equivalent to typing in "n" copies of the integer "m".  In other
+words, the integer "m" is replicated "n" times.
+	(4) matrix variable, if the row degrees of the matrix are 
+d1,...,dr, this is equivalent to typing in these r numbers.
+	(5) the single character "\".  This means continue the integer list 
+on the next line.
+
+Examples:
+	1 2 3..5 i..i+3
+	4 1 2
+	0:5 1			same as 0 0 0 0 0 1
+	0:d
+	m n			takes first row degrees of m, then n, 
+				assuming m, n are matrix variables.
+
+DEFAULTS: in every instance that an integer list is expected, simply
+typing the return key produces some default value.  However, this
+default value changes from instance to instance.  The prompt line
+tries to give an indication of what the default value is.  The help
+entry of each command always describes the default value.
+
+~variable lists
+
+Variable lists are actually (unordered) sets of ring indeterminates.
+They are used in the "jacobian" command, as well as several standard
+basis commands which divide the variables into blocks.  The default
+value is always the first block of indeterminates in the polynomial
+ring. (Therefore, in the usual case, this means every variable in the
+ring).
+
+A variable list is input as a sequence of items separated by spaces,
+much like integer lists.  Each item is one of:
+	(1) an indeterminate, e.g. a, x[i+1], D[i,j], or
+	(2) indet..indet, where each "indet" is as in (1).  For
+example, x..z, or a..x[1].  
+	(3) the single character "\".  This means obtain more
+variables on the next line.
+
+Furthermore, if the first item consists of the single character "!",
+then the set of variables selected is the complement of the set
+actually given.
+
+Examples: suppose that the variables in the current ring are (in the
+order they were given in the "ring" command): xyzdcbax[1]x[2]x[3]y[2]
+Suppose that xyz are the variables in the first block, and that the
+rest of the variables are in the second block. Then
+	(1) x y x[1]..y[2]	==> {x,y,x[1],x[2],x[3],y[2]}
+	(2) x..z d..a		==> {x,y,z,d,c,b,a}
+	(3) a..d		==> bad variable list
+	(4) ! x..z		==> {d,c,b,a,x[1],x[2],x[3],y[2]}
+	(5) <return>		==> {x,y,z}
+	(6) !			==> all variables
+
+~ring variable name generation
+
+During the "ring" command, the user is asked for the names of the
+variables (ring indeterminates) for this polynomial ring.  Macaulay
+expects a string of ring indeterminate names with no intervening blanks.
+For example,  xyzabcd selects the variables x y z a b c d.
+
+If too few variables are given (Macaulay has already asked for the
+number of variables), then you are prompted for more variables.  If
+too many are given, the extras are ignored, with a polite warning message.
+
+In a ring with large numbers of variables, it is quite annoying to
+type in the variables one by one.  To alleviate this problem, Macaulay
+allows you to type in "sequences".  A sequence of variables is just
+two variables with a "-" between them.  This is a shortcut to naming
+all the variables between the two.
+
+Examples:
+	(1) a-f		==> same as: abcdef
+	(2) a-Z		==> not allowed: both variables must be of same case.
+	(3) a[1]-b[2]	==> same as: a[1]a[2]b[1]b[2].
+	(4) a[1,1]-b[0,1] ==> same as: a[1,1]a[0,1]b[1,1]b[0,1].
+	(5) f-a		==> same as: fedcba.
+
+Notice that in (4), it is possible to sequence "downward" on a
+specific index.
+
+~monomial orders (introduction)
+
+Macaulay is based on the computation of standard (Groebner) bases,
+which depends on a monomial order on the monomials of the polynomial
+ring.  Each ring in Macaulay comes equiped with a monomial order: if
+you wish to change the order, you must create a new ring.
+
+The default monomial order in Macaulay is the so-called "reverse
+lexicographic order".  This is defined by: x^A > x^B if and only if
+either deg(x^A) > deg(x^B), or deg(x^A) = deg(x^B), and the last
+non-zero component of the vector A - B is negative.  For example, if
+the variables are "xyz", then one has
+	x2 > xy > y2 > xz > yz > z2 > x > y > z > 1.  
+
+The reason that this is the default order in Macaulay is that for many
+purposes this is the most efficient order.
+
+Macaulay allows general monomial orders to be specified.  However,
+there are two orders (other than reverse lex.) which are of most
+importance: elimination orders, and product (or fiber) orders.
+
+~general monomial orders
+
+Each monomial in Macaulay consists of a sequence of non-negative
+integers.  Each integer is one of the following values:
+	(1) The row (or module component) number of this monomial,
+	(2) The value of the monomial x^A, under a specified weight
+function W: i.e. the value stored is just the dot product W.A
+	(3) The position in reverse lex. order of "part" of the
+monomial x^A, with respect to a subset of the variables.
+
+There can be as many entries (2), (3) as desired.  (1) can occur at
+most once.
+
+@System commands
+
+~exit	-- exit Macaulay, except from an interrupted computation.
+~exit all -- exit Macaulay even from an interrupted computation.
+~reset	-- reset Macaulay.
+~version	-- display current version of Macaulay
+~help 	-- give general help
+help <topic> -- give help on specified topic, if any
+help-file <file name> -- displays any line in <file-name> beginning
+		with three semicolons.
+~monitoring a session
+~monitor <file> -- start displaying all screen input + output to file.
+~endmon	-- stop monitoring, "exit" also stops.
+~space	-- displays detailed memory usage of Macaulay
+~size <matrix> -- displays #monomials in matrix in each degree.
+~spairs <matrix> -- displays #s-pairs left to compute, during
+			   a standard basis computation.
+@command files
+
+	<<file arg1 ... argn	 -- run a Macaulay command file in "tour" mode.
+	<file arg1 arg2 ... argn   -- execute a Macaulay command file 
+	>>file arg1 ... argn       -- create a Macaulay tour (command) file
+	#1, ..., #10, etc.  -- refer to the arguments inside a command file
+	$	-- stop creating command file.
+	?	-- obtain user input from terminal.
+	;	-- comment, everything ignored past this on same line.
+	break	-- exit current command file
+	echo	-- echo output
+	>file	-- at end of a command, writes output to file, instead of
+		   screen.
+	if <integer> <label1> [<label2>]
+		if integer != 0 then jump to label1: [else jump to label2: ]
+	jump <label> -- jump to label: in current input script
+-- where does Macaulay find it's files?
+	setenv MacaulayPath .:path1:path2:path3
+		-- outside of Macaulay, issue a "setenv" command (UNIX)
+		   to provide a list of directories to search for files
+	Macaulay.init -- if this file exists, then it is automatically
+		   executed before anything else, when Macaulay is first 
+		   started.
+
+@user defined variables
+
+~listvars  -- displays variables defined so far.  Giving one or two
+		     arguments gives more information.
+~type <var> -- displays the contents of the user defined variable.
+		      (one of: ring, matrix, ring map)
+~kill <var1> ... <var n> -- destroy the user defined variables
+
+@set variables
+
+~set  -- display all "set" variable settings
+set default -- return each "set" variable to its original setting.
+set <set variable>  <integer> -- set <set variable>
+incr-set <set variable> <integer> -- increment (or decrement) 
+		<set variable> by the amount of <integer>.
+   the "set" variables are described if you give "set" command with no
+   arguments.
+
+@Integers
+
+~int <name> <new value>
+
+Creates an integer variable with the given value.  <new value> can be any
+integer expression.  Examples:
+	int i i-1 ; decrement i (STILL BUGGY)
+	int a (i^2-i+1)^3
+
+~nrows <matrix> [result integer]
+
+Set the result integer variable, if given, to the number of rows of
+the given matrix.  If it is not given, display this information instead.
+
+~ncols <matrix> [result integer]
+
+Set the result integer variable, if given, to the number of columns of
+the given matrix.  If it is not given, display this information instead.
+
+~nvars <ring> [result integer]
+
+Set the result integer variable, if given, to the number of variables
+in the polynomial ring <ring>.  If it is not given, display this
+information instead. (Note: wherever a ring is expected as an
+argument, any variable with the same base ring can be used in it's place).
+
+~characteristic <ring> [result integer]
+
+Set the result integer variable, if given, to the characteristic of
+the polynomial ring <ring>.  If it is not given, display this
+information instead. (Note: wherever a ring is expected as an
+argument, any variable with the same base ring can be used in it's
+place).
+
+
+~rings
+
+Every matrix in Macaulay must have a base ring.  This base ring is a
+polynomial ring in a certain number of variables, over a prime field
+of characteristic p > 0, for some p.  It is possible to work modulo an
+ideal (see the "qring" command).
+
+There may be many rings defined at any instant, but one of these rings
+is the "current ring".  For commands which input polynomials (e.g.
+"poly", "ideal", "mat", "sparse"), this current ring is used as the
+base ring.  Many commands set the current ring, such as "add" (add 2
+matrices).  You may set it explicitly using the "setring" command.
+
+If a matrix is used as an argument to a Macaulay command which expects
+a ring, the base ring of the matrix is used. ("pring", "setring", ring
+map commands, "ring-sum")
+
+Finally, when a ring is created, say with name "r", then the returned
+value is actually a 1 by n matrix consisting of all the variables in
+the ring.
+
+~ring <result ring>
+
+Interactively define a ring. The following information is requested:
+	(a) characteristic of the ring -- a positive prime number less
+than about 32000 is required.  If you want to simulate characteristic
+zero, simply type <return>.  A large characteristic is then selected.
+	(b) the number of variables -- must be positive.  There is
+also an upper limit on the number of variables (around 100 to 512 or
+so).
+	(c) names of the variables (do "help indets" for the syntax of
+ring indeterminates).  These should be given without intervening
+spaces.  Sequences of variables may be generated by using ".."
+(CURRENTLY "-") between two variables, e.g:
+		a..f  ==> abcdef
+		a[1]..b[2] ==> a[1]a[2]b[1]b[2]
+If not enough variables are given, you will be prompted for more.  If too
+many are given, the extras are ignored (with a warning).
+	(d) weights of the variables.  An integer list is expected.
+The weight of each variable must be a positive integer.  If <return>
+is entered, then the variables are all assigned weight one.  If too
+few weights are given, then the last weight given is assigned to the
+remaining variables.  
+	(e) the monomial order.  Typing <return> selects the reverse
+lex. order.  Typing in a number (which is less than the number of
+variables) selects a product order (see monomial help for more
+details, and the general form for the input).
+
+~pring [ring or matrix]
+
+Display the base ring of the given matrix, or ring.  If no argument is
+given, display the current ring.
+
+~setring <ring or matrix> 
+
+Set the current ring to be the base ring of the given matrix or ring.
+
+~qring <standard basis> <result ring> 
+
+Given a standard basis of an ideal, create a new ring where all
+operations in this new ring will be done modulo this ideal.  A warning
+message is given if the first argument is not a standard basis.
+Creating a quotient ring where the base ring of the standard basis is
+already a quotient ring works correctly (BUG: SHOULD work correctly).
+
+~ring-sum <ring1> <ring2> <result ring> 
+
+Create a new ring with the variables from both <ring1> and <ring2>.
+The monomial order of the result is the product order, where the
+variables of <ring1> are considered before variables from <ring2>.  If
+either or both of <ring1> or <ring2> is a quotient ring, then the
+result will be one as well (BUG: doesn't quite work yet).  If the
+first or second argument is a matrix, then the <ringi> is the base
+ring of that matrix.
+
+~ring-from-cols <matrix> <result ring>
+
+Create a new ring with n variables, where n is the number of columns
+of <matrix>.  The weight of each variable is the degree of the
+corresponding column.  The user is prompted for the names of the
+variables (which should be given exactly as in the "ring" command).
+(BUG: currently, n cannot be zero).
+
+If any of the weights are non-positive, they are "scaled up" so that
+they are all positive.
+
+~ring-from-rows <matrix> <result ring> 
+
+Create a new ring with n variables, where n is the number of rows
+of <matrix>.  The weight of each variable is the degree of the
+corresponding row.  The user is prompted for the names of the
+variables (which should be given exactly as in the "ring" command).
+(BUG: currently, n cannot be zero).
+
+If any of the weights are non-positive, they are "scaled up" so that
+they are all positive.
+
+@matrices
+
+A matrix in Macaulay is a matrix of polynomials over some polynomial ring.
+Some general notes valid for all matrix commands:
+	(1) Almost all operations on matrices are valid whether or not
+the matrix is homogeneous.  The only exception are the "computation"
+commands.
+	(2) Matrices with zero rows or columns (or both) are allowed
+as parameters (when they make sense, e.g. one can multiply a 3 by 0,
+and a 0 by 4 matrix to obtain a 3 by 4 matrix.  This is useful for
+writing scripts.
+	(3) Result variables can be given the same name as an
+argument: e.g. the command "add m n m" computes m+n, and then removes
+the old matrix "m", and finally stores the result "m+n" with the name "m".
+	(4) All operations work correctly with quotient rings (i.e.
+the result is reduced w.r.t. this ring.)
+	(5) As usual thoughout Macaulay, whenever an integer is
+expected as an argument, or is prompted for, one may use any integer
+expression.
+
+~mat <result matrix> [optional: file name]
+
+Interactively create a matrix over the current ring.  You are first
+prompted for the number of rows, and then columns.  Any integer
+expression is allowed.  Macaulay then prompts for each entry of the
+matrix column by column.  Each entry should be a polynomial expression.
+
+If a file name is given, the command uses this file as input, and it
+does it's work silently.  Thus "mat m file" is the same as 
+"mat m <file", where the input has been redirected to come from
+"file", except that it does it's work silently.
+
+Note: the "putmat" command writes matrices to a file suitable for
+input via "mat".
+
+~ideal <resulting matrix>
+
+Interactively input a 1 by n matrix over the current ring.  The system
+first prompts for the number of columns, and then for each polynomial.
+
+~poly <result matrix> <polynomial> 
+
+Set <result> with the 1 by 1 matrix over the current ring consisting
+of the given polynomial.
+
+~sparse <result matrix> [optional: file name] 
+
+Interactively create a sparse matrix over the current ring.  The
+system first prompts for the number of rows and columns, and then
+prompts for the index and polynomial value of each non-zero entry: e.g.
+	1 2 a2-b2
+	4 100 (a+b)^10
+	<return> 
+will set the locations (1,2), and (4,100) with the given polynomials.
+Typing the <return> key ends the command.
+
+If a file name is given, the command uses this file as input, and it
+does it's work silently.
+
+~putmat <matrix> 
+
+Write to standard output the matrix in a format suitable to read by
+"mat".  For example, "putmat m >file" writes to the file "file", and
+then one could use "mat m <file", or "mat m file" to read this matrix
+in at a later time.  (Caution: before doing "mat m file" command, make
+sure you have defined the desired current polynomial ring!)
+
+~prmat <matrix> 
+
+Writes matrix in a format suitable for mathematica input.  Currently,
+some ring indeterminates can cause problems: indexed variables work
+fine, as long as they have been declared in mathematica.  String
+indeterminates, such as |hi there|, don't work at all.  Single letter
+variables cause no problem.
+
+One word of warning: If in mathematica, the identifier "a", say, has a
+value, then every occurence of "a" in a matrix will be replaced with
+this value.
+
+@matrix manipulation commands
+
+~add <matrix> <matrix> <result>
+
+Add two matrices of the same shape, which have the same base ring. 
+
+~sub <matrix> <matrix> <result>
+
+Subtract the second matrix from the first.  Both matrices must have
+the same shape and the same base ring.
+
+~mult <matrix> <matrix> <result>
+
+Multiply a p by q matrix by a q by r matrix, producing a p by r
+matrix.  Both matrices must have the same base ring.
+
+~smult <matrix> <polynomial> <result matrix>
+
+Multiply each entry of <matrix> with the given polynomial expression
+(a polynomial with the same base ring as the matrix).
+
+~tr <matrix> <result transposed matrix>
+
+Transpose the given matrix.  The row and column degrees are switched
+and negated, in order to keep the result matrix graded, assuming the
+input matrix is also graded.
+
+~dsum <matrix> ... <matrix> <result>
+
+Create the direct (block diagonal) sum of the given matrices.  These
+matrices must have the same base ring.
+
+~iden <size> <result>
+
+Creates a <size> by <size> identity matrix over the current ring.  The
+row and column degrees are all set to 0.  (Use "setdegs" to change
+them, if desired).
+
+~diag <matrix> <result>
+
+Given a m by n matrix, a m*n by m*n diagonal matrix is created, whose
+diagonal entries consist of every entry of the original matrix.  The
+entries are taken from the first column, then the second, and so on.
+
+~submat <matrix> <result submatrix>
+
+Put a submatrix of <matrix> into the result matrix.  The user is prompted
+for integer lists describing exactly which rows and columns to choose.
+
+~trace <matrix> <resulting trace>
+
+Sets the 1 by 1 matrix result with the sum of the diagonal entries of
+<matrix>.
+
+~flatten <matrix> <result ideal of entries>
+
+Create the row vector (1 by m*n) matrix consisting of every entry of
+the m by n <matrix>.  The entries are taken from the first column,
+then the second, and so on.
+
+~concat <matrix> <matrix2> ... <matrix n>
+
+Replace <matrix> with the concatenation of all n matrices.  Every
+matrix should have the same number of rows and the same base ring.
+The result matrix has the same number of rows, but it has a column for
+each column of each matrix. These columns are placed into <matrix> in
+the natural order.
+
+The row degrees of the result matrix are exactly the same as the
+original <matrix>.  The column degrees have likewise been concatenated
+together.  So, if the row degrees of the various matrices are
+different, then the resulting matrix is probably not graded: use
+"setdegs", or "setcoldegs" to correct this.
+
+Caution: this command is "destructive".  The first argument is actually 
+modified.  An error is reported if the matrix being modified also appears
+later in the list.
+
+~cat <ring variable or integer> <result matrix>
+
+Create a matrix consisting of indeterminates. The first argument is
+either a ring indeterminate in the current ring, or an integer. 
+The user is prompted for two integer lists: call them rows, and cols.  The
+result matrix is then the matrix whose (i,j) entry is
+	v[rows(i)+cols(j)]
+where v[k] is the k th ring indeterminate:
+    (1) if the first argument is a ring indet., then v[k] is the k th
+variable after this one.
+    (2) if the first argument is an integer, n say, then v[k] is the n+k th
+variable of the ring.
+
+Example: Suppose that the variables of the ring are abcdefghij, then
+    % cat a m
+    ! rows = 0 3 6
+    ! columns = 0 1 2
+
+    % type m
+    ; a b c
+    ; d e f
+    ; g h i
+
+Note: if "i" is an integer variable, then "cat i m" takes the ring
+indeterminate "i".  To get the integer "i", use "cat {i} m".
+
+This command is very useful for creating "generic" matrices.
+
+~koszul <int n, or matrix> <p> <result matrix>
+
+Create a Koszul matrix.  If the first argument is a matrix, it should
+be a 1 by n matrix, for some n.  If an integer is given, the input
+matrix is set to the 1 by n matrix consisting of the first n variables
+in the current ring.
+
+The result matrix is the matrix corresponding to the map
+	wedge(p)(V) ---> wedge(p-1)(V),
+where V is free of rank n, and the map is induced from the input matrix.
+
+For example, if the first 4 variables in the current ring are abcd,
+then
+
+    % koszul 4 2 n
+    % type n
+    ; b  c  d  0  0  0
+    ; -a 0  0  c  d  0
+    ; 0  -a 0  -b 0  d
+    ; 0  0  -a 0  -b -c
+
+~power <matrix 1 by n> <d : int> <result matrix>
+
+Takes a 1 by n matrix and returns a 1 by N matrix consisting of all
+products of these polynomials taken d at a time.  So N = n+d-1 choose n-1.
+The products are constructed in descending lexicographic order.
+
+For example, if the matrix m = (a,b,c,d), then
+	% power m 2 m2
+	% type m2
+	; a2 ab ac ad b2 bc bd c2 cd d2
+
+~tensor <matrix M> <matrix N> <result matrix M.N>
+
+Compute the tensor product of the modules presented by the matrices M,
+N: If M is an (a by b) matrix, and N is a (c by d) matrix, then the
+result is a matrix with a*c rows, and (b*c+a*d) columns, which is the
+matrix which presents the tensor product of the two modules.
+
+For example, 
+	% type m
+	; a b
+	; c d
+
+	% type n
+	; e f g
+	; h i j
+	; k l m
+
+	% tensor m n p
+
+	% type p
+	; e f g 0 0 0 a b 0 0 0 0
+	; h i j 0 0 0 0 0 a b 0 0
+	; k l m 0 0 0 0 0 0 0 a b
+	; 0 0 0 e f g c d 0 0 0 0
+	; 0 0 0 h i j 0 0 c d 0 0
+	; 0 0 0 k l m 0 0 0 0 c d
+
+~outer <matrix> <matrix> <result matrix>
+
+Compute the outer (tensor) product of two matrices.  If the matrices
+have sizes (a by b) and (c by d) respectively, then the result has size
+a*c by b*d.  
+
+For example, 
+	% type m
+	; a b
+	; c d
+
+	% type n
+	; e f g
+	; h i j
+	; k l m
+
+	% outer m n p
+
+	% type p
+	; ae af ag be bf bg
+	; ah ai aj bh bi bj
+	; ak al am bk bl bm
+	; ce cf cg de df dg
+	; ch ci cj dh di dj
+	; ck cl cm dk dl dm
+
+~jacob <ideal> <resulting jacobian> [variable list]
+
+Compute the Jacobian matrix of a 1 by n matrix, w.r.t. the given set
+of variables.  The resulting matrix has n rows, and m columns, where m
+is the number of variables given in the variable list.  The (i,j)
+entry is then the derivative of the i th polynomial in <ideal> by the
+j th variable in the given set.  
+
+For example,
+	% type j
+	; a2-bc abcd
+
+	% jacob j k a..d
+
+	% type k
+	; 2a  -c  -b  0
+	; bcd acd abd abc
+
+~diff <ideal M> <ideal N> <result matrix>
+
+Given two matrices of sizes (1 by m) and (1 by n) respectively, this
+computes the derivatives of each element of N w.r.t. the differential
+operators corresponding to the polynomials in M.  The resulting matrix
+has size (m by n).  
+
+For example,
+	% type i
+	; a2 a2+bc abc
+
+	% type j
+	; a2-bc abcd
+
+	% diff i j k
+
+	% type k
+	; 2 0
+	; 1 ad
+	; 0 d
+
+
+~contract <ideal> <ideal> <result matrix>
+
+Compute the contraction of one ideal w.r.t. another. This is exactly
+the same as the "diff" command, except that contraction is used
+instead of differentiation.  E.g. D(a2).a3 = a, NOT 6a.
+
+For example,
+	% type i
+	; a2 a2+bc abc
+
+	% type j
+	; a2-bc abcd
+
+	% contract i j k
+
+	% type k
+	; 1 0
+	; 0 ad
+	; 0 d
+
+~wedge <matrix> <p> <result>
+
+Compute the determinants of all the p by p minors of the given matrix.  If
+the size of this matrix is m by n, then the resulting matrix has size
+m choose p by n choose p.  The signs are chosen so that if C = A.B, then
+the resulting Cw = Aw . Bw, where Aw, Bw, Cw, are the returned values of
+"wedge ... p ...".
+
+For example,
+	% type m
+	; a b c
+	; d e f
+	; g h i
+
+	% wedge m 2 q
+
+	% type q
+	; -bd+ae cd-af  -ce+bf
+	; bg-ah  -cg+ai ch-bi
+	; -eg+dh fg-di  -fh+ei
+
+To make this into a 1 by N matrix, use the "flatten" command.
+ 
+~pfaff <skew matrix> <result ideal of 4 by 4 pfaffians>
+
+Given a skew symmetric matrix, compute the 1 by N matrix of all the 4
+by 4 Pfaffians of the matrix. (N = n choose 4, where the size of the
+skew matrix is n by n).
+
+For example,
+	% type m
+	; 0  a  b  c  d
+	; -a 0  e  f  g
+	; -b -e 0  h  i
+	; -c -f -h 0  j
+	; -d -g -i -j 0
+
+	% pfaff m j
+
+	% type j
+	; ce-bf+ah de-bg+ai df-cg+aj dh-ci+bj gh-fi+ej
+
+~coef <matrix> <result monoms> <result coefs> [variable list]
+
+Find the monomials in the given variable list which occur in <matrix>,
+and return a 1 by n matrix consisting of these monomials, and another
+matrix consisting of the coefficients of these monomials.
+
+If <matrix> has just one column, then the result coef matrix has the
+same number of rows as <matrix> and n columns, one for each monomial.  If
+<matrix> has several columns, the result is the concatenation of the results
+for each column done separately.
+
+For example,
+	% type m
+	; abc2+abcd+a2d
+	; a2e+1
+	; b2+1
+
+	% coef m monoms coefs a b
+
+	% type monoms
+	; ab a2 b2 1
+
+	% type coefs
+	; c2+cd d 0 0
+	; 0     e 0 1
+	; 0     0 1 1
+
+Caution: The default variable list, if none is given, is the first block 
+of variables in the base ring of <matrix>.  To find the coefficients
+in all of the variables, use ``!'': e.g. "coef m monoms coefs !". 
+
+~homog <matrix> <homog variable> <new matrix>
+
+Homogenize the columns of <matrix> w.r.t. the homogenizing variable,
+which must be a ring indeterminate in the base ring of <matrix> having
+weight one.
+
+For example, if a, b, d all have weight one in the current ring, the
+	% type m
+	; a3  a+3 -a3+ab+1
+	; a-1 a-2 b5
+
+	% homog m d n
+
+	% type n
+	; a3     a+3d -a3d2+abd3+d5
+	; ad2-d3 a-2d b5
+ 
+~copy <existing matrix> <copy of matrix>
+
+Create a copy of the original matrix.  If any changes are made to
+either matrix, the other will not be affected.
+
+~random <nrows> <ncolumns> <result random matrix>
+
+Create a nrows by ncols matrix with random constant entries over the
+current ring.
+
+For example,
+	% random 2 3 m
+	
+	% type m
+	; 13047 14709  12844
+	; 11056 -10785 -2827
+
+~compress <matrix> <result matrix>
+
+Create a new matrix which is the submatrix of <matrix> consisting
+of those columns of <matrix> which have a non-zero entry.
+
+For example,
+	% type m
+	; 0 a 0
+	; 0 b 0
+
+	% compress m n
+
+	% type n
+	; a
+	; b
+
+@matrix edit commands
+
+~edit <matrix> -- set matrix to edit
+
+This command sets the edit matrix to be <matrix>. Subsequently, the
+commands "pr", "pc", "mr", "mc", "ar", "ac", and "ce" will act on and
+modify <matrix>.
+
+edit <matrix> skew 
+
+This version of the "edit" command tells the system that <matrix> is a
+skew-symmetric matrix and that every row operation "pr", "mr", "ar",
+should also be done on columns in order for the result to remain skew
+symmetric.
+
+edit 
+
+With no arguments, the edit matrix is set to "none".  Also, if <matrix> is
+removed or killed, then the edit matrix is also set to "none".
+
+~pr <row 1> <row 2>  
+
+Permute (interchange) the given rows (which are integer expressions)
+in the edit matrix (see "edit").
+
+~pc <column 1> <column 2> 
+
+Permute (interchange) the given columns (which are integer expressions)
+in the edit matrix (see "edit").
+
+~mr <row> <poly multiplier> 
+
+Multiply the given row (an integer expression) in the edit matrix by
+the given polynomial expression (see "edit").
+
+~mc <col> <poly multiplier> 
+
+Multiply the given column (an integer expression) in the edit matrix by
+the given polynomial expression (see "edit").
+
+~ar <row> <poly. multiplier> <row to modify> 
+
+Replace the row <row to modify> in the edit matrix with 
+<row to modify> + <row>.<poly> (see "edit")
+
+~ac <col> <poly. multiplier> <column to modify>
+
+Replace the column <column to modify> in the edit matrix with 
+<column to modify> + <column>.<poly> (see "edit")
+
+~ce <row> <col> <new poly. entry> 
+
+Change the given entry of the edit matrix to the polynomial
+expression.  This command does not reset row or column degrees, so in
+order to make sure that Macaulay thinks that this matrix is
+homogeneous, use the "setdegs", "setcoldegs" commands. (see "edit").
+@degrees of matrices
+
+Each matrix in Macaulay is presumed to be graded.  i.e. each row and
+each column is given an integer weight, and the sum of the i th row
+degree with the degree of the (i,j) entry of the matrix is equal to
+the j th column degree.
+
+When a matrix is created, its row degrees are all set to 0.  The
+degree of each non-zero column is then computed, and every zero column
+is given degree 0.
+
+The commands "setdegs", "setcoldegs", "dshift" modify the row and
+column degrees of a matrix. This is sometimes necessary because
+certain commands do not usually reset their degrees when modified
+(e.g. "concat", "edit commands", "edit-map"). 
+
+Macaulay only requires graded matrices for doing computations "std",
+"res", "nres", "syz", "intersect", "quotient", "modulo", and
+"lift-std".  All other matrix operations in Macaulay can be used
+whether or not the matrices involved are graded.
+
+~col-degree <matrix> <column> [result integer]
+
+Set the result integer variable, if given, to the degree of the given
+column of the given matrix.  If an integer is not specified, display
+this degree.  The <column> is any integer expression.  Zero is
+returned if <column> is out of range.
+
+~col-degs <matrix> [column degrees]
+
+Display the column degrees of a matrix.  If a second argument is
+given, it should be an identifier.  In this case, its value is set to
+an n by 0 matrix whose row degrees are the same as the column degrees
+of <matrix>.
+
+~dshift <matrix> <degree, d, to shift by> 
+
+Add the value of the integer expression "d" to each row and column
+degree of <matrix>.
+
+~max <matrix> [result maximum row degree]
+
+Set the result integer variable, if given, to the maximum row degree
+of the given matrix.  If a variable is not specified, display the
+maximum degree.  If <matrix> has zero rows, then 0 is returned.
+
+~min <matrix> [result minimum row degree]
+
+Set the result integer variable, if given, to the minimum row degree
+of the given matrix.  If a variable is not specified, display the
+minimum degree.  If <matrix> has zero rows, then 0 is returned.
+
+~row-degree <matrix> <row> [result integer]
+
+Set the result integer variable, if given, to the degree of the given
+row of the given matrix.  If a variable is not given, display the
+degree.  The <row> is any integer expression.  Zero is returned if the
+<row> is out of range.
+
+~row-degs <matrix> [row degrees] 
+
+Display the row degrees of a matrix.  If a second argument is given,
+it should be an identifier.  In this case, its value is set to an n by
+0 matrix with the same row degrees as <matrix>.
+
+~setcoldegs <matrix> 
+
+Prompts for the degree of each column.  If <return> is typed, the
+column degree of each non-zero column is computed from the existing
+row degrees.  Each column consisting entirely of zeros has its degree
+set to 0.  If instead an integer list is given, this list is used as
+the column degrees.  See \secref{sec-intlist} for details on integer
+lists.
+
+A warning message is displayed if the resulting matrix is not graded.
+
+~setdegs <matrix> 
+
+Prompts for the row degrees to be assigned to this matrix.  If
+<return> is typed, every row degree is set to 0.  Otherwise, an
+integer list is expected. The system then prompts for the column
+degrees.  If <return> is typed, the column degree of each non-zero
+column is computed from the above row degrees.  Each column consisting
+entirely of zeros has its degree set to 0.  If instead an integer list
+is given, this list is used as the column degrees.  See
+\secref{sec-intlist} for details on integer lists.
+
+A warning message is displayed if the resulting matrix is not graded.
+
+@computations
+
+Computations of standard bases and syzygies are the heart of Macaulay.
+Currently, the commands which create computations are: "std", "res",
+"nres", "syz", "intersect", "quotient", "modulo", and "lift-std".
+Each of these commands sets up a computation and then executes it.
+
+Each matrix which is input to the commands of this section must be 
+GRADED: see \secref{sec-graded} for details.  In fact, the commands in this
+section are the ONLY commands of Macaulay which require that their 
+input parameters be graded.  If the matrix is not graded, an error message
+is issued.  In this case, either homogenize the matrix, or use the
+"setdegs" or "setcoldegs" command to make the matrix graded.
+
+The commands in this section compute standard bases and/or syzygies of
+submodules of free modules.  Given a r by c matrix M, let I \subset
+R^r be the submodule of the free R-module generated by the columns f1,
+..., fc of M, where R is the base ring of M.  We call I the submodule
+corresponding to M.
+
+Every computation below has a computed standard basis for the result
+submodule.  The result matrix and standard basis is named by the
+<result computation>, except for the "nres" and "res" commands.  In
+these cases, the various matrices of the resolution are indexed
+starting at 1: e.g. w.1, w.2, etc.  Each of these matrices has a
+computed standard basis.
+
+In every case except one the result matrix or matrices correspond to
+minimal generators of the result submodule(s).  The exception is with
+the "res" command.  The first matrix of the result has a standard
+basis computed, but the matrix is the original matrix.  However, the
+rest of the matrices do correspond to minimal generators of their
+submodules.
+
+Each of these commands works fine in the case where the base ring is a 
+quotient ring.
+
+~intersect <matrix 1> ... <matrix n> <result computation>
+
+Compute the intersection of the submodules Mi corresponding to
+<matrix i>.  A standard basis and a minimal set of generators of this
+submodule are also computed.  For example,
+
+%%example%%intersect
+
+The intersection is computed by creating an auxiliary matrix (w.0 in the
+above example) and then using the "syz" command to find the first 
+component(s) of each syzygy on the columns of this matrix.
+
+Each matrix <matrix i> must be graded, and have the same number of
+rows.  If the resulting auxiliary matrix is not graded, then an error
+message is given, and <result computation> itself is set to this
+matrix.
+
+~lift-std <matrix> <computation>
+
+Compute a standard basis of the submodule, I,  corresponding to <matrix>,
+keeping enough information to remember how each standard basis element can
+be expressed in terms of the original columns of <matrix>.  This extra
+information is called the "change of basis matrix" by Macaulay.  It is
+needed for the "reduce" and "lift" commands.  The "putchange" command
+extracts this matrix from the <computation>.  For example,
+
+%%example%%lift-std
+
+The resulting matrix corresponds to minimal generators of I.
+
+~modulo <matrix> <matrix> <computation>
+
+Compute a presentation for I+J/J, where I is the submodule generated
+by the columns of the first matrix, and J is the submodule generated
+by the columns of the second matrix.
+
+If the row degrees for I and J are not the same, or if I or J is not
+graded, an error message is given. 
+
+For example,
+%%example%%modulo
+
+~nres <matrix> <computation> [max depth]
+
+Compute a minimal free resolution of the module M presented by <matrix>.
+The columns of the i th matrix of the result minimally generate the
+i th syzygy module of M.  A standard basis is computed for each of these
+syzygy modules.
+
+If a maximum depth, d, is specified, then only the first "d" matrices of
+the resolution are computed.  The default for d is the number of variables
+in the base ring of <matrix>.  If the base ring is a polynomial ring, and
+not a quotient ring, then Hilbert's syzygy theorem says that the length
+of the resolution is bounded by the number of variables.
+
+For example,
+%%example;;nres
+
+Note that the columns of w.1 minimally generate the submodule corresponding
+to <matrix>, the columns of w.2 minimally generate the syzygies on these
+columns, the columns of w.3 minimally generate the syzygies on w.2, etc.
+
+The computation proceeds degree by (slanted) degree.  For more details, see
+\secref{sec-fine-pts}.
+
+~quotient <matrix I> <matrix J> <result computation I:J>
+
+Create a computation which computes the submodule quotient (I : J),
+where I, J are the submodules generated by the columns of their
+respective matrices.  There are two cases:
+	(1) If J is an ideal (i.e. 1 by n matrix), then the result is
+a matrix with the same number of rows as I, whose columns generate
+(I:J).
+	(2) If J has the same number of rows as I, then the result is
+an ideal (i.e. a 1 by m matrix, for some m).
+
+In both cases, the result contains a standard basis. The columns of
+the result minimally generate the answer. 
+
+Each matrix must be graded.  If the resulting auxiliary matrix is not
+graded, then an error message is given, and "w" itself is set to this
+matrix.  Otherwise the auxiliary matrix has index "0", as with the
+"intersect" command.
+
+~res <matrix> <computation> [max depth]
+
+Compute the finite free minimal resolution of the GRADED module with
+presentation matrix <matrix>.  If the maximim depth is given, then
+only this number of matrices are computed. If the name of the
+computation is "w", say, then the matrices (and their standard
+bases) can be obtained by indexing this name: 
+	w.1  == original matrix
+	w.2  == (minimal) syzygies on the columns of <matrix>
+	w.3  == (minimal) syzygies on the columns of w.2, etc.
+	...
+
+The computation is done slanted degree by slanted degree.  Notice that
+if the columns of <matrix> do not minimally generate the module, then
+the result is not a minimal resolution at the first two steps.  From
+w.3 on, it is a minimal resolution.
+
+This (and every other computation) command works fine even over a
+quotient ring (see "qring").  However, in this case, the resolution is
+not usually of finite length.  For this reason, the default [max.
+depth] is always the number of variables in the base ring.  For
+polynomial rings, Hilbert's syzygy theorem tells us that the
+resolution will never be longer than this.
+
+~std <matrix> <computation> 
+
+Compute a standard (Groebner) basis for the columns of the given
+matrix.  To obtain the standard basis as a matrix after the
+computation is finished, use the "putstd" command.  However, there are
+many more commands which manipulate standard bases.
+
+This command also computes a minimal set of generators for the
+submodule generated by the columns of the matrix. (use "type").
+
+ESSENTIAL NOTE: The matrix must be GRADED.  If not, Macaulay will tell
+you that it is not, and not create the computation.
+
+~syz <matrix> <# components(-1=all,0,...)> <computation>
+
+This command creates a computation to produce the (partial) syzygies
+of the columns of <matrix>.  If the second argument is -1, then the
+result will be a matrix whose columns (minimally) generate these
+syzygies.  If the second argument, d say, is non-negative, then the
+result will be a matrix with d rows, such that the first d rows of any
+syzygy of the columns of <matrix> will be in the module generated by
+the columns of the result, and conversely, each column of the result
+extends to a syzygy of the original matrix.
+
+The main use of this command is to compute a presentation matrix for
+I+J/J, where I, J are submodules of the same free module.  This is
+accomplished with the "modulo" command.  We leave this command here
+because it possibly has other applications.
+
+<matrix> must be GRADED.  Otherwise an error message is given.
+
+~standard basis commands (overview)
+
+Each of the computation commands compute standard (Groebner) bases of
+the submodule generated by the columns of a matrix. In Macaulay, this
+standard basis is stored internally in the original matrix.  One then
+uses one of the "standard basis" commands to extract information from
+the basis.
+
+These commands include
+	(1) codim, degree, hilb   -- extract numerical information
+	(2) elim, keep            -- useful for elimination of variables
+	(3) stdpart, inpart       -- useful to work over quotient fields
+	(4) sat                   -- useful for "saturation" of ideal
+	(5) in, putstd, putchange -- extract initial monomials,
+				     standard basis, as matrix 
+	(6) reduce, lift, forcestd-- submodule (or ideal) membership
+	(7) k-basis, truncate	  -- find k-basis for module
+
+typically, these commands extract information about the matrix or
+module by examining the initial monomials of the standard basis. 
+
+if a standard basis of the columns of the matrix has not been
+computed, each of the above commands issues a warning message.  in
+this case, the columns of the matrix are then used as if they formed a
+standard basis (exception: reduce, lift).  one must use caution in
+this case: the answer is likely not the correct one.
+
+~hilb <standard basis>
+
+Compute the Hilbert series of the graded module presented by <standard
+basis>.  This is the same as the Hilbert series of the submodule of
+initial monomials in a standard basis.
+
+The Hilbert series of a GRADED module M is the power series
+	H(t) = sum (over all d) of dim(M_d) t^d.
+It turns out that H(t) = P(t)/(1-t)^{numvars}, where P(t) is a polynomial.
+Also, H(t) = Q(t)/(1-t)^{dim M}, where Q(t) is another polynomial.
+
+This command displays the two polynomials P(t), and then Q(t), and then
+displays degree(M) = Q(1), codim(M) = numvars - dim M, and the
+arithmetic genus of M (currently valid only if dim M = 2).
+
+Restrictions: all the variables in the ring are assumed to have weight
+one.  This command doesn't currently work with quotient rings.
+
+Finally, hitting mouse (MAC) or CNTRL-C (other machines) cancels the
+computation, returning you back to the command level.
+
+~codim <standard basis> [integer result]
+
+Set the result integer, if given, to the codimension of the module
+presented by <standard basis>.  if it is not given, then display the
+codimension instead.
+
+The codimension of the module presented by <standard basis> is the
+same as the codimension of the submodule of initial monomials in a
+standard basis.  Given this monomial submodule, the codimension is
+computed by finding a minimal set of variables which form an
+associated prime for the submodule.
+
+Restrictions: currently, this command doesn't work with quotient
+rings.  However, the weights of the variables can be arbitrary, and M
+doesn't even need to be graded.  This command works well even for very
+large standard bases (several thousand elements in the standard
+basis).
+
+~degree <standard basis> [integer result]
+
+Set the result integer, if given, to the degree of the graded module
+presented by <standard basis>.  if it is not given, then display the
+degree instead.
+
+The degree of the module presented by <standard basis> is the same as
+the degree of the submodule of initial monomials in a standard basis.
+Given this monomial submodule, the degree is computed by finding every
+set of variables of minimal length which form an associated prime for
+the submodule, and then finding the degrees of these components.
+
+Restrictions: currently, this command doesn't work with quotient
+rings.  The weight of each ring variable is assumed to be one.
+
+~elim <standard basis> <result matrix> [n]
+
+Compute the subset of the columns of <standard basis> which lie in a
+subring.  A column of <standard basis> is placed into the result
+matrix if the first "n" blocks of its initial monomial have the value
+zero.  The default for "n" is one.
+
+This is most useful when using either an elimination or product order.
+In this case, the effect is to find the subset of the standard basis
+not involving the first "block" of variables (thus "eliminating" these
+variables).
+
+For example, suppose variables are "stwxyz", and the monomial order given
+was "2 4" (ie, product order).  Then
+	% putstd jj k
+	% type k
+	; y2-xz xy-wz x2-wy t3-z sz-ty sy-tx sx-tw st2-y s2t-x s3-w
+
+	% elim jj p
+
+	% type p
+	; y2-xz xy-wz x2-wy    ;; so s, t have been eliminated.
+
+~keep <standard basis> <result matrix> [n]
+
+Compute the subset of the columns of <standard basis> which do NOT lie
+in a subring.  A column of <standard basis> is placed into the result
+matrix if one of the first "n" blocks of its initial monomial is not
+zero.  The default for "n" is one.
+
+Note that this command chooses exactly the complement of the columnns
+chosen by the "elim" command.
+
+For example, suppose variables are "stwxyz", and the monomial order given
+was "2 4" (ie, product order).  Then
+	% putstd jj k
+	% type k
+	; y2-xz xy-wz x2-wy t3-z sz-ty sy-tx sx-tw st2-y s2t-x s3-w
+
+	% keep jj p
+
+	% type p       ;; so every element not in the subring was selected.
+	; t3-z sz-ty sy-tx sx-tw st2-y s2t-x s3-w  
+
+~in <standard basis> [optional result matrix] [n]
+
+If only one argument is given, display (with the same format as
+"putmat") the initial monomials of each column of <standard basis>.
+If more than one argument is given, set the result matrix to have the
+same number of rows and columns as the standard basis, and consisting
+of the initial terms of each column.  The initial term of a column is
+the sum of those monomials in the column having the same first "n"
+blocks as the initial monomial of the column.  The default for "n" is
+infinity.
+
+If "n" is not given, this is used to pick out the monomial submodule
+of lead monomials.  If "n" is given (usually the value one), this is
+useful for computing for example tangent cones.
+
+For example, suppose variables are "stwxyz", and the monomial order given
+was "2 4" (ie, product order).  Then
+	% putstd jj k
+	% type k
+	; y2-xz xy-wz x2-wy t3-z sz-ty sy-tx sx-tw st2-y s2t-x s3-w
+
+	% in jj p
+
+	% type p
+	; y2 xy x2 t3 sz sy sx st2 s2t s3
+
+~stdpart <standard basis> <result matrix> [variable list]
+
+Find a (minimal) subset of <standard basis> which remains a standard
+basis in the case where all variables not in the variable list are
+considered to be constants.
+
+This command first finds a minimal set of generators for the initial
+ideal of <standard basis> in this set of variables, as in the "inpart"
+command, and then sets the result matrix with the corresponding set of
+columns of <standard basis>.
+
+For example, suppose variables are "stwxyz", and the monomial order given
+was "2 4" (ie, product order).  Then
+	% type p
+	; t3-z sz-ty sy-tx sx-tw st2-y s2t-x s3-w
+
+	% stdpart p q
+	; warning: no standard basis. Using initial terms of matrix
+
+	% type q  ;; initial ideal is generated by (t3, s), therefore:
+	; t3-z sz-ty
+See the "inpart" command for more detail.
+
+~inpart <standard basis> <result matrix> [variable list]
+
+Find the initial monomial submodule of <standard basis> where all
+variables not in the variable list are considered to be constants.  
+
+This command first finds the submodule of initial monomials of
+<standard basis>, then sets every variable not appearing in the
+variable list to 1, and then places a minimal set of generators of
+this monomial submodule as the columns of the result matrix.
+
+This command is most useful in conjunction with a product order, where
+the variable list consists of the first "block" of variables (the
+default, if no variable list is given).  In this case, the result
+initial submodule is exactly the same as if the standard basis had
+been computed over the quotient field generated by the variables not
+in the above list.
+
+For example, suppose variables are "stwxyz", and the monomial order given
+was "2 4" (ie, product order).  Then
+	% type p
+	; t3-z sz-ty sy-tx sx-tw st2-y s2t-x s3-w
+
+	% inpart p q
+	; warning: no standard basis. Using initial terms of matrix
+
+	% type q
+	; t3 s
+See also the "stdpart" command.
+
+~incoef <standard basis> <result matrix> [variable list]
+
+TO BE CHANGED: this command will be modified in the near future.
+
+~sat <standard basis> <result matrix> <variable> [max power]
+
+Divide each column of <standard basis> by <variable> as many times as
+possible, or as much as [max power] times, if [max power] is given.
+The highest power divided by is then displayed.
+
+This command is most useful in conjunction with the reverse
+lexicographic order, where the <variable> is the least variable in the order.
+
+For example, if the variables are "xyzt", and the monomial order is
+the reverse lexicographic order, then
+	% putstd jj k
+
+	% type k  ; minimally generated by xy-zt, and  x2-yt.
+	; y2t-xzt xy-zt x2-yt
+
+	% sat jj p t
+	; largest division was by t
+	
+	% type p
+	; y2-xz xy-zt x2-yt
+
+~reduce <standard basis M> <matrix to reduce N> <result reduced matrix R> 
+	[result lifted matrix L]
+
+Reduce each column of N w.r.t. the standard basis M, placing each
+reduced column into R. Both of these matrices should have the same
+number of rows.  If the matrix L is present on the command line, then
+L is set to be the (m, n) lifted matrix where m is the number of
+columns of M, and n is the number of columns of N, and M,N,R,L
+satisfy:
+	N = M.L + R
+
+Restrictions: If a standard basis of M hasn't been constructed, then a
+warning message is given, but the reduction is NOT done.  In order to
+use "reduce" with matrices which are not standard bases, use the
+"forcestd" command.  
+
+Important note: In order to compute L, it is necessary that a change
+of basis matrix from standard basis to generators of a matrix has been
+computed.  The commands "lift-std", "res", "nres" do this, but "std"
+DOES NOT!  (Also: "quotient", "intersect", "modulo" do NOT).
+
+~lift <standard basis M> <matrix to lift N> <result L>
+
+This command is similar to "reduce": each column of N is reduced
+w.r.t. the standard basis of M.  If N does not reduce to zero an error
+message is displayed.  If no error message is generated, the L
+satisfies N = M.L, as long as a change of basis matrix for M has been
+computed (see the important note under "reduce" command).
+
+~putstd <standard basis> [optional: result matrix]
+
+If no second argument is given, display in "putmat" form the standard
+basis.  Otherwise, create a new matrix whose columns are the elements
+of the given standard basis.
+
+~putchange <standard basis> [optional: result matrix]
+
+If no second argument is given, display in "putmat" form the change of
+basis matrix (if any) from standard basis elements to generators of
+the module they form.  Otherwise, create a new matrix whose i th
+column is the representation of the i th standard basis element of
+<standard basis>.
+
+Warning: certain computation commands do not create this change of
+basis matrix (for efficiency), such as "std".  In this case the change
+of basis matrix appears to be all zeros.
+
+~forcestd <matrix> <result standard basis> [change of basis]
+
+Create a matrix with an attached standard basis.  This command forces
+<matrix> to be considered as a standard basis.  If a change of basis
+matrix is given, it will be placed in the attached standard basis as
+if it were the change of basis matrix.
+
+Warning: this command is useful if you happen to know that <matrix>
+forms a standard basis, but the amount of computation to verify this
+is huge.  This command makes each column monic, since Macaulay insists
+that every standard basis element be monic.  If a change of basis
+matrix is given, it is changed accordingly.  (BUG: currently, these
+columns are NOT made monic, so watch out!)
+
+~k-basis <standard basis> <result matrix> [variable list]
+
+Create a matrix whose columns form a k-basis for the module presented
+by <standard basis>, where each variable not appearing in the variable
+list is considered to be a constant.  You are prompted for the lowest
+and highest degree to include.  Thus each column is a monomial in the
+variables given, and the set of these monomials is exactly the
+complement of the set of initial monomials of the <standard basis>, in
+the given degrees.
+
+For example, if the variables are {x,y,a,b,c}, and "jj" is a standard
+basis, then
+
+	% type jj    ;; should be a standard basis
+	; x2-ab y2-bc
+
+	% k-basis jj k x y
+	! lowest degree (default=no lowest degree)  =
+	! highest degree (default=no high degree)   =
+
+	% type k
+	; 1 x xy y
+
+If <standard basis> is a matrix with no standard basis computed, then
+a warning message is generated, and the matrix is used as if it were a
+standard basis.
+
+~truncate <standard basis> <result matrix> [variable list]
+
+Create the matrix whose columns generate the module M_{>=d}, where M
+is the module presented by <standard basis>, and M_{>=d} is the
+submodule of M consisting of all elements in degree >= d.
+
+You are prompted for the integer expression "d".
+
+If M is an a by b matrix, then the resulting matrix has a rows, and
+consists of a k-basis of M in degree d, as well as any unit column vector
+whose corresponding row has degree larger than d.  (BUG: currently, if
+<standard basis> has a column which is a unit vector, this unit vector
+still appears in the result).
+
+For example, 
+
+	% type m
+	; a a2 b4
+	; b c2 d4
+
+	% std m mm
+	; 12.3.4.5.6.7.8.9.10.11.
+	; computation complete after degree 11
+
+	% truncate mm p
+	! lowest degree (default=0)  = 1
+
+	% type p   ;; in this case, there are no generators of higher degree.
+	; b c d 0 0 0 0
+	; 0 0 0 a b c d
+
+~calc <computation> [hi degree] 
+
+Actually do the calculation given by <computation>, either through all
+degrees, or through the highest degree indicated.  This command is no
+longer used very much in Macaulay, it's use can almost always be avoided.
+
+~continue 
+
+Continue from an interrupted computation.  
+
+~chcalc <computation> [new hi deg] 
+
+Inside of an interrupted computation, reset the degree at which to
+stop the computation.  This is useful if in the middle of a
+computation you realize that the "answer" must occur at some
+relatively low degree.
+
+There are two "set" variables which control this execution.  First
+note that all computations proceed degree by degree (except "istd").
+
+ 	autocalc	If negative, start computation immediately,
+			and proceed until the computation is done.
+			If positive, start computation immediately, and
+			proceed to the degree "autodegree".
+			If zero, don't start up the computation yet:
+			in order to start the computation you must use
+			the "calc" command.
+
+	autodegree	if autocalc is set positive, then this tells
+			how high in degree to go in the computation.
+
+On the Macintosh, hitting the mouse causes Macaulay to interrupt at
+the next convenient time.  On Unix systems, typing (CNTRL)-C
+accomplishes the same thing.  Once interrupted, you can type in any
+Macaulay commands you wish, viewing partial results or doing other
+work.  To continue with the computation, type "continue".
+
+
+@ring map commands
+
+~rmap <result> <R1> <R2>  
+
+Interactively define a map of rings <R1> ---> <R2>.  A map of rings
+from <R1> to <R2> is simply a 1 by n matrix with base ring <R2>, where
+n is the number of variables of <R1>.  The i th variable of <R1> is
+mapped to the polynomial which is the i th column of this matrix.  The
+command "ev" is used to evaluate a ring map on a matrix.
+
+For example, suppose ring "r" has variables {a,b,c}, and ring "s" has
+variables {s,t}.  Then 
+
+	% rmap f r s
+	! a ---> = s5
+	! b ---> = s4t+s3t2
+	! c ---> = t5
+
+	% type f
+	; s5 s4t+s3t2 t5
+
+	% pmap f r
+	; map : r ---> s
+	; a |--> s5
+	; b |--> s4t+s3t2
+	; c |--> t5
+
+Notice that "pmap" displays the ring map as a map.  The result "f" is
+a matrix over the ring "s" and so all matrix operations are allowed.
+
+~imap <new ring map> <R1> <R2> [ones, default=zeros]  -- define
+		an "identity" map between two rings
+
+Create a new ring map (i.e. a 1 by n matrix in the ring <R2>) whose
+effect is to map each variable of <R1> to the variable of the same
+name in <R2>.  If there is no such variable in <R2>, then it is mapped
+to zero.  If a forth argument is present, then it is mapped to one instead.
+
+You are prompted to change this map by giving "variable, new image"
+pairs, as in the "edit-map" command.  Typing <return> means don't
+modify the ring map.  
+
+For example, if the ring "r" has variables {a,b,x}, and "s" has
+variables {a,b,c,d,e}, then
+
+	% imap f r s
+	! variable, new image =
+
+	% type f
+	; a b 0
+
+	% pmap f r
+	; map : r ---> s
+	; a |--> a
+	; b |--> b
+	; x |--> 0
+
+~edit-map <ideal> [source ring]  -- modify a defined ring map.
+
+Modify a 1 by n matrix <ideal> representing a ring map from [source
+ring] to the base ring of <ideal>.  You are prompted for "variable,
+new image" pairs.  The first argument should be a ring indeterminate
+in the source ring (the base ring of <ideal> is the default).  The
+second argument should be a polynomial expression in the same ring as
+<ideal>.  The corresponding column of <ideal> is changed to the new value.
+
+The two arguments are separated by spaces, and to quit, type <return>.
+
+For example, if "r" has variables {a,b,c,d}, and "s" has {x,y,z}, then
+
+	% pmap f s
+	; map : s ---> r
+	; x |--> ab
+	; y |--> cd
+	; z |--> a+b+c+d
+
+	% edit-map f s
+	! variable, new image = x (a+b)^3
+	! variable, new image =
+
+	% pmap f s
+	; map : s ---> r
+	; x |--> a3+3a2b+3ab2+b3
+	; y |--> cd
+	; z |--> a+b+c+d
+
+~ev <ideal> <matrix> <changed matrix>  
+
+Evaluate <matrix> under the ring map corresponding to the 1 by n
+matrix <ideal> from base ring of <matrix>, R say, to the base ring of
+<ideal>, S say, where the i th variable of R is mapped to the i th
+column of <ideal>.  
+
+If <ideal> has fewer columns than the number of variables of R, then
+the remaining variables of R are mapped to zero.  If the number of
+columns is too large, the remaining columns are ignored.
+
+For example, if "s" has variables {x,y,z}, and "r" has {a,b,c,d}, then
+
+	% pmap f s
+	; map : s ---> r
+	; x |--> a3+3a2b+3ab2+b3
+	; y |--> cd
+	; z |--> a+b+c+d
+
+	% type j
+	; x+y -z2+y
+
+	% ev f j k
+
+	% type k
+	; a3+3a2b+3ab2+b3+cd -a2-2ab-b2-2ac-2bc-c2-2ad-2bd-cd-d2
+
+~to-ring <matrix> <result matrix> [ones, default=zeros] 
+
+Create a new matrix over the current ring which is essentially
+<matrix>: i.e. each variable in <matrix> which occurs in the current
+ring is left unchanged, and each variable which doesn't occur is set
+to zero by default (or 1, if a third argument is given).
+
+You are prompted, as in the "edit-map" command to modify these default values.
+
+This command is essentially "imap f <matrix> <current ring>", followed
+by "ev f <matrix> <result matrix>".  This command is useful for
+changing monomial orders, inclusion of one ring in another, or
+projection of one ring to another.
+
+For example, if "s" has variables {x,y,z}, and "r" has {a,b,x,y}, then
+
+	% type j   ;; assumed to have base ring "s"
+	; x3+y3+z3 xy-z2
+
+	% setring r
+
+	% to-ring j k ones   ;; so set variable z to 1, others stay the same.
+	! variable, new image =
+
+	% type k   ;; matrix with base ring "r".
+	; x3+y3+1 xy-1
+
+~pmap <ideal> [source ring] 
+
+Display the ring map corrresponding to the 1 by n matrix <ideal>, from
+the [source ring] to the base ring of <ideal>.  If the source ring is
+not given, the current ring is used instead.
+
+@resolution commands
+
+~pres <complex> 
+
+This command displays the set of matrices of the computation
+<complex>.  The main use is to display a finite free resolution
+obtained from the "res" or "nres" commands.  The first matrix is the
+original matrix ("res"), or a matrix whose columns minimally generate
+the columns of the original matrix ("nres").  The second matrix is the
+syzygy matrix of the first: each column dots to zero with each row of
+the first matrix, and these generate all such columns.  Similarly, the
+third matrix is the syzygy matrix of the second, etc.
+
+~betti <res> 
+
+Display the graded betti numbers of a set of matrices.  The main use
+is to display the graded betti numbers of a resolution produced via
+"res" or "nres".
+
+For example, if "jj" is the result of "res j jj", where j = {a2, b2,
+c2, d2}, then
+
+	% betti jj
+	; total:      1     4     6     4     1
+	; --------------------------------------
+	;     0:      1     -     -     -     -
+	;     1:      -     4     -     -     -
+	;     2:      -     -     6     -     -
+	;     3:      -     -     -     4     -
+	;     4:      -     -     -     -     1
+
+This should be read as follows.  From the line starting with "1:", the
+ideal has 4 generators in degree 2.  The degree of an entry is the sum
+of the degree "d:" and i, where i is the column (starting at 0, from
+the left).  Thus, there are 6 first syzygies in degree 4 = 2+2, 4 2nd
+syzygies in degree 6, and finally one 3rd syzygy in degree 8.
+
+Finally, notice that the "regularity" of the module presented by the
+first matrix is "m", where "m" is the largest index "d:" which occurs.
+In the above example, the regularity is 4.
+
+~numinfo <res> 
+
+Display some numeric information about the set of matrices <res>.
+Usually <res> is the output of a computation command, but it may also
+be a matrix.  
+
+For example, if "jj" is the result of "res j jj", where j = {a2, b2,
+c2, d2}, then
+
+	% numinfo jj
+	; name    #rows #cols #standard  degrees
+	; 1       1     4     4          2:4
+	; 2       4     6     6          4:6
+	; 3       6     4     4          6:4
+	; 4       4     1     1          8
+
+For each matrix the following information is given: its index, number
+of rows and columns, number of standard basis elements (if any), and
+the degree of each column of the matrix.
+

@@ -1,0 +1,106 @@
+incr_set prlevel 1
+if #0=2 START
+incr_set prlevel -1
+;;; Usage:
+;;;     <blowup0 J K
+;;;
+;;; K is set to be the ideal with a standard basis defining the
+;;; ring R[t] as a quotient ring of a polynomial ring
+;;;	S = R[t,y[1],...y[ncols(J)]]
+;;; under the map sending y[i] to the i th generator of J.
+;;; The ring R is the base ring of J.  The variable "t" is the first
+;;; variable of S.
+incr_set prlevel 1
+jump END
+;;; Parameters:
+;;;   J = ideal to blow up
+;;;
+;;; Output values:
+;;;   K = standard basis of the ideal (y[i]-tJ[i], i=1..ncols(J)), where
+;;;	  J[i] stands for the i th generator of J, and K is an ideal in the
+;;;	  the ring S.
+;;;
+;;; The ring S = R'[t, y[1], ..., y[ncols(J)]], where R' is
+;;; a copy of R, with variables named x[i], using the reverse
+;;; lexicographic order with three blocks of variables: the first block
+;;; consists of the variable "t", the second block contains the y[i], and
+;;; the last block contains the variables x[i] corresponding to the
+;;; variables of R.
+;;;
+;;; The ring R may be a quotient ring.
+;;;
+;;; This script is useful for computing blowup rings and associated graded
+;;; rings (normal cones).  The ideal L defining the blowup ring R[tJ] is
+;;; obtained by eliminating "t" from K.  The normal cone of J can be
+;;; obtained by adding the generators of J to the ideal L
+;;; (see the script "normalcone" for a different method).
+; modified 4/24/89 DE,MS, 5/23/89 MS
+START:
+     
+; first create the ring S
+     
+<copyring x @R'
+     
+ncols #1 @ny
+dshift #1 1   ; this is so that y[i]-tJ[i] will be homogeneous
+ring_from_cols #1 @y
+    y[1]-y[@ny]
+dshift #1 -1  ; restore the original degrees
+
+characteristic @R' @charac     
+ring @t
+  @charac
+  1
+  t
+  ;
+  ;
+     
+ring_sum @t @y @ty
+ring_sum @ty @R' @S
+     
+; create the ideal K and its standard basis
+     
+nvars #1 @nx
+setring @S
+cat x[1] @xvars
+    0
+    0..@nx-1
+cat y[1] @yvars
+    0
+    0..@ny-1
+     
+ev @xvars #1 @J    ; bring J to the ring S.
+smult @J t @tJ
+subtract @yvars @tJ @K
+std @K #2
+     
+kill @R' @ny @y @t @ty @S @nx @xvars @J @tJ @K @yvars
+kill @R''zero @y'zero @t'zero @ty'zero @S'zero
+     
+END:
+incr_set prlevel -1
+     
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+<blowup0
+;; blowup the nodal cubic curve in P2 at the node.
+<ring 3 xyz r
+poly f y2z-x3-x2z
+qring f s
+<ideal origin x y
+<blowup0 origin K
+type K
+listvars
+
+;; char. 3 ;;;;;;;;;;;
+ring R
+  3
+  3
+  xyz
+  ;
+  ;
+poly f y2z-x3-x2z
+qring f s
+<ideal origin x y
+<blowup0 origin K
+type K
+pring

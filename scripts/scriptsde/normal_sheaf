@@ -1,0 +1,263 @@
+incr-set prlevel 1
+if (#0-3)=0 START
+incr-set prlevel -1
+;;; Usage:
+;;; 	<normal_sheaf i N Nbar 
+;;;
+;;; Computes a presentation for N = (i/i^2)^* , 
+;;; the normal sheaf, as a module
+;;; over the ambient ring, and, in Nbar.3, over the
+;;; factor ring R/i
+incr-set prlevel 1
+jump END
+;;; Parameters:
+;;;		i = ideal
+;;; Output values:
+;;;		N = (i/i^2)^* module over current ring
+;;;     Nbar = resolution over R/i.  Nbar.3 is the presentation of
+;;;            (i/i^2)^*
+;;; When the script exits, the current ring has been set back to its
+;;; initial value.
+;;;
+;;;		This script computes the normal sheaf 
+;;; by finding a presentation
+;;;	of i, dualizing it, and resolving over 
+;;; the factor ring R/i, where
+;;; R is the ambient ring.
+;;;
+;;; 	For some reason this method is much faster than the 
+;;; more obvious N = hom (i.2,i), where i.2 
+;;; is a presentation of i.
+;;; -- see the examples section for a comparison.
+;;;
+;;; Caveats:
+;;; Nbar.3 is a minimal presentation with standard basis, 
+;;; but N is not in general minimal, and has no standard basis computed.
+;;; To compute just H^0 N(p) for the 
+;;; smallest p making this non-minimal, it is enough to compute the
+;;; second syzygy over the factor ring -- more generally, we get
+;;; the degrees of the generators of N by
+;;;	    res @pres @pres 2
+;;;     betti @pres.2 ;the last column give the generators.
+
+; created 5/20/89
+START:
+;find the presentation of i
+nres #1 @i 2
+
+;pass to the factor ring and dualize:
+qring @i.1 @q
+fetch @i.2 @pres
+transpose @pres @pres
+
+;Note that res instead of nres is necessary in the next line,
+;because else free summands of (i/i^2)^* will be ignored!	
+res @pres #3 3
+
+;take everything back to the original ring:
+setring #1
+fetch #3.3 #2
+tensor #2 @i.1 #2
+
+kill @pres @q @q'zero @i
+END:
+incr-set prlevel -1
+
+$;;;;;;;; EXAMPLE SECTION ;;;;;;;;;;;;;;;;;;;;;;;;;
+;Normal bundle of a complete intersection:
+reset
+<ring 4 a-z r
+<ideal i a2+b2+c2+d2 a2-b2
+<normal_sheaf i N Nbar
+betti N
+
+;alternately
+<ideal i a2+b2+c2+d2 a2-b2
+res i ii 2
+<hom ii.2 ii.1 N
+betti N
+
+set prlevel 0
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Normal bundle of the twisted cubic:
+<ring 4 a-z r
+<monomial_curve 1 2 3 i ;the twisted cubic
+<normal_sheaf i N Nbar
+std N N ;
+betti N
+; total:      6    12 
+; --------------------
+;    -1:      6    12 
+;The normal bundle is 
+;0_{P1}^2 (5) = 0_{P3} (1)  \0  0_{P1}^2 (2),
+;where we have written \0 for tensor.  
+;Thus, up to a shift of degree
+;by 1, the resolution is the resolution 
+;over P3 of 0_{P1}^2 (2),
+;And this has 6 sections.  
+
+;H^0 (N) = dimension of the hilbert scheme = 12,
+;since this is a smooth point:
+k-basis N b
+0
+0
+betti b
+; total:      6    12 
+; --------------------
+;    -1:      6    12 
+;Answer is in the second column = 12.
+;Note that this 12 is the complementary 12 
+;to the 12 relations of n
+;(since 4 x 6 = 24.)
+
+;alternately
+res i ii 2
+<hom ii.2 ii.1 N
+betti N
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;A canonically embedded graph curve 
+;A graph curve of genus 7, from work of Ciliberto and ...
+<ring 7 a-z r
+;This comes from a planar graph pg7.
+ideal i           
+ 10
+ef-eg
+cf+df
+cd-ce-cg
+be
+bd-bg
+bc+bg
+af+df
+ad-ae-ag
+ac+ae+ag
+ab+df+ag
+
+res i ii
+betti ii
+; total:      1    10    21    21    10     1 
+; --------------------------------------------
+;     0:      1     -     -     -     -     - 
+;     1:      -    10    16     5     -     - 
+;     2:      -     -     5    16    10     - 
+;     3:      -     -     -     -     -     1 
+;genus 7, Clifford index 2
+<normal_sheaf i N p
+std N N
+betti N
+; total:     20    98 
+; --------------------
+;    -1:     16    50 
+;     0:      4    48 
+
+;H^0 (N) = dimension of the hilbert scheme = 12,
+;since this is a smooth point:
+k-basis N b
+-1
+0
+betti b
+;    -2:      -    16 
+;    -1:     16    66 
+;     0:      4     - 
+;So h^0 N(-1) = 16, h^0 (N) = 66 = 3*7 - 3 + 7^2 - 1 
+;= the dim of hilb.
+
+
+;The alternate method takes about 5 times as long:
+res i ii 2
+<hom ii.2 ii.1 N  
+betti N                    ;Not a minimal presentation.  
+                           ;OK after pruning.
+; total:     72   150 
+; --------------------
+;    -1:     16   102 
+;     0:     56    48 
+
+k-basis N b
+-1
+0
+betti b
+; total:     72    82 
+; --------------------
+;    -2:      -    16 
+;    -1:     16    66 
+;     0:     56     - 
+
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+reset
+;Some ribbons:
+;genus 5:
+<ring 5 a-z r
+
+;Cliff = 1
+<ideal ribbondata 1 0 0
+<ribbon ribbondata i
+<normal_sheaf i n p
+k-basis p.3 b
+-3
+1
+betti b   ;I thought this had given me some other result before!
+; total:     10   114 
+; --------------------
+;    -3:      -     3 
+;    -2:      3    15 
+;    -1:      6    36 
+;     0:      1    60 
+;3g-3 + g^2-1 = 12 + 24 = 36
+
+
+;Cliff = 2
+;same hilbert function as Cliff = 1
+
+;genus 7:
+<ring 7 a-z r
+
+;Cliff = 1
+<ideal ribbondata 1 0 0 0 0
+<ribbon ribbondata i
+<normal_sheaf i n p
+k-basis p.3 b
+-3
+1
+betti b
+; total:     14   216 
+; --------------------
+;    -3:      -     3  
+;    -2:      3    21 
+;    -1:     10    66 
+;     0:      1   126 
+;The second col gives the hilbert function of the normal sheaf
+;The 66 = 3g-3+g^2-1 = 18+48
+;(with the fact that C is a locally complete intersection)
+;shows that C is a smooth point of the
+;Hilbert scheme.
+
+;Cliff = 2:
+setring r
+<ideal ribbondata 0 1 0 0 0
+<ribbon ribbondata i
+<normal_sheaf i n p
+k-basis p.3 b
+-3
+1
+betti b
+; --------------------
+;    -3:      -     1 
+;    -2:      1    17 
+;    -1:     10    66 
+;     0:      3   126 
+
+
+; Cliff = 3
+setring r
+<ideal ribbondata 0 0 1 0 0
+<ribbon ribbondata i
+<normal_sheaf i n p
+k-basis p.3 b
+-3
+1
+betti b
+;    -2:      -    16 
+;    -1:     16    66 
+;     0:      -   126 
