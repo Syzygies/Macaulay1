@@ -1,0 +1,140 @@
+# ninja build - link Macaulay.bin in build/ (default)
+# ninja clean - rm -rf build
+
+cflags = -g -w -std=c99
+lflags =
+
+rule CC
+  depfile = $out.d
+  command = gcc -MD -MF $out.d $cflags -c $in -o $out
+  description = CC $out
+
+rule LN
+  command = gcc $cflags $lflags $in -o $out
+  description = LN $out
+
+rule CLEAN
+  command = rm -rf build
+  description = CLEAN
+
+build build: phony build/Macaulay.bin
+build clean: CLEAN
+
+default build
+
+build build/array.o: CC source/array.c
+build build/betti.o: CC source/betti.c
+build build/boxcmds.o: CC source/boxcmds.c
+build build/boxprocs.o: CC source/boxprocs.c
+build build/charp.o: CC source/charp.c
+build build/cmdnames.o: CC source/cmdnames.c
+build build/cmds.o: CC source/cmds.c
+build build/debug.o: CC source/debug.c
+build build/det.o: CC source/det.c
+build build/detach.o: CC source/detach.c
+build build/dot_fns.o: CC source/dot_fns.c
+build build/ed.o: CC source/ed.c
+build build/generic.o: CC source/generic.c
+build build/getdet.o: CC source/getdet.c
+build build/gm_cmds.o: CC source/gm_cmds.c
+build build/gm_dlist.o: CC source/gm_dlist.c
+build build/gm_plist.o: CC source/gm_plist.c
+build build/gm_poly.o: CC source/gm_poly.c
+build build/gmatrix.o: CC source/gmatrix.c
+build build/help.o: CC source/help.c
+build build/hilb.o: CC source/hilb.c
+build build/hilb2.o: CC source/hilb2.c
+build build/hulb.o: CC source/hulb.c
+build build/human_io.o: CC source/human_io.c
+build build/inhomog.o: CC source/inhomog.c
+build build/input.o: CC source/input.c
+build build/intersect.o: CC source/intersect.c
+build build/koszul.o: CC source/koszul.c
+build build/mac.o: CC source/mac.c
+build build/mem.o: CC source/mem.c
+build build/monideal.o: CC source/monideal.c
+build build/monitor.o: CC source/monitor.c
+build build/monoms.o: CC source/monoms.c
+build build/parse.o: CC source/parse.c
+build build/parsepoly.o: CC source/parsepoly.c
+build build/comb_rec.o: CC source/comb_rec.c
+build build/plist.o: CC source/plist.c
+build build/poly.o: CC source/poly.c
+build build/printf.o: CC source/printf.c
+build build/prpoly.o: CC source/prpoly.c
+build build/qring.o: CC source/qring.c
+build build/rescmds.o: CC source/rescmds.c
+build build/ring.o: CC source/ring.c
+build build/rmap.o: CC source/rmap.c
+build build/rvar.o: CC source/rvar.c
+build build/set.o: CC source/set.c
+build build/shell.o: CC source/shell.c
+build build/smallterm.o: CC source/smallterm.c
+build build/spcmds.o: CC source/spcmds.c
+build build/standard.o: CC source/standard.c
+build build/stash.o: CC source/stash.c
+build build/stats.o: CC source/stats.c
+build build/stdcmds.o: CC source/stdcmds.c
+build build/tables.o: CC source/tables.c
+build build/term.o: CC source/term.c
+build build/vars.o: CC source/vars.c
+build build/version.o: CC source/version.c
+
+build build/Macaulay.bin: LN $
+  build/array.o $
+  build/betti.o $
+  build/boxcmds.o $
+  build/boxprocs.o $
+  build/charp.o $
+  build/cmdnames.o $
+  build/cmds.o $
+  build/debug.o $
+  build/det.o $
+  build/detach.o $
+  build/dot_fns.o $
+  build/ed.o $
+  build/generic.o $
+  build/getdet.o $
+  build/gm_cmds.o $
+  build/gm_dlist.o $
+  build/gm_plist.o $
+  build/gm_poly.o $
+  build/gmatrix.o $
+  build/help.o $
+  build/hilb.o $
+  build/hilb2.o $
+  build/hulb.o $
+  build/human_io.o $
+  build/inhomog.o $
+  build/input.o $
+  build/intersect.o $
+  build/koszul.o $
+  build/mac.o $
+  build/mem.o $
+  build/monideal.o $
+  build/monitor.o $
+  build/monoms.o $
+  build/parse.o $
+  build/parsepoly.o $
+  build/comb_rec.o $
+  build/plist.o $
+  build/poly.o $
+  build/printf.o $
+  build/prpoly.o $
+  build/qring.o $
+  build/rescmds.o $
+  build/ring.o $
+  build/rmap.o $
+  build/rvar.o $
+  build/set.o $
+  build/shell.o $
+  build/smallterm.o $
+  build/spcmds.o $
+  build/standard.o $
+  build/stash.o $
+  build/stats.o $
+  build/stdcmds.o $
+  build/tables.o $
+  build/term.o $
+  build/vars.o $
+  build/version.o
