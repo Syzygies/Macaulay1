@@ -1,50 +1,28 @@
-/* Copyright 1989 Dave Bayer and Mike Stillman. All rights reserved. */
-#ifndef _PARSEH_
-#define _PARSEH_
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
-#include <setjmp.h>
+#include <setjmp.h> // for jmp_buf
 
-#define LXEOI 0
-#define LXINT 1
-#define LXPOLY 2
-#define LXLT 3
-#define LXLE 4
-#define LXGT 5
-#define LXGE 6
-#define LXEQ 7
-#define LXNE 8
-#define LXOR 9
-#define LXAND 10
-#define LXPLUS 11
-#define LXMINUS 12
-#define LXMULT 13
-#define LXDIV 14
-#define LXMOD 15
-#define LXEXP 16
-#define LXLP 17
-#define LXRP 18
-#define LXUMINUS 19 /* unary minus */
-#define LXUPLUS 20  /* unary plus */
-#define LXNOT 21    /* unary NOT */
+// Forward declaration
+typedef struct stack_struct stack;
 
-#define NARGS 2     /* max. number of arguments of any of our ops */
+// Exported functions
+int parseInt(char **str);
+int getInt(const char *s);
+int readInt(char **str);
+boolean emptyStack(stack *st);
+void initStack(stack *st);
+void *pop(stack *st);
+void push(stack *st, void *val);
+void *tos(stack *st);
+int collectInt(char c, char **str);
+int eatInt(char **str);
+void parseErr(char *end, const char *mess);
 
-extern int fprec[] ;
-extern int gprec[] ;
-extern int nargs[] ;
-
-extern jmp_buf jmpparse ; /* used to catch parser errors */
-extern char *beginStr ;   /* used for printing errors */
-extern int amParsing;  /* =1 if setjmp(jmpparse), beginStr have been set, else 0*/
-
-
-/* stack definitions */
-
-#define NSTACK 50
-
-typedef struct {
-    int tos ;   /* top of stack */
-    int vals[NSTACK] ; /* stack itself */
-} stack ;
-
-#endif
+// Exported globals
+extern int fprec[];
+extern int gprec[];
+extern int nargs[];
+extern jmp_buf jmpparse;
+extern char *beginStr;
+extern int amParsing;

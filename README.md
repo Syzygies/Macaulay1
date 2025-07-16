@@ -5,9 +5,9 @@ This project stalled in 2022. It compiled and crashed. We've returned to it in 2
 
 We've found various runtime bugs, and determined that a better workflow is to satisfy every compiler tool we can, however pedantic, to perfect the code.
 
-We hope to use PVS-Studio to continue this effort.
+We hope to use [PVS-Studio](https://pvs-studio.com/en/pvs-studio/?utm_source=website&utm_medium=github&utm_campaign=open_source) to continue this effort.
 
-We are the original authors. This is not a fork, for the simple reason that Git wasn't started until 2005 and this project was under development through 1994. We gave people floppy disks, wrote tape for them, and migrated to a "tar" archive when that became possible.
+We are the original authors. This is not a fork: Git wasn't started until 2005 and this project was under development through 1994. We gave people floppy disks, wrote tape for them, and migrated to a "tar" archive when that became possible.
 
 - `bin/` : conversion commands
   - `convert.rb` : converts 1994 K&R C Macaulay source files to ANSI C

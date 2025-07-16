@@ -1,142 +1,109 @@
-/* Copyright 1989 Dave Bayer and Mike Stillman. All rights reserved. */
-#include "style.h"
-#undef comp
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
-// void handle ();
-// void spec_init ();
-// void intr_shell ();
-// boolean have_intr ();
-void rmmouse ();
-// void prsetup ();
-// void setTextSize (int n);
-// void markTime ();
-// long nSeconds ();
-// long get_ticks ();
-// void prTime (char *str);
+#include <signal.h>  // signal, sig_atomic_t, SIGINT
+#include <time.h>    // clock, clock_t, CLOCKS_PER_SEC
+#include "shared.h"
+#include "mac.h"
+#include "monitor.h"  // print, newline
+#include "shell.h"    // shell
+#include "set.h"      // timer
 
-/* A default file search path must be provided below,
- * and can be modified via the environment variable MacaulayPath,
- * then by the file Macaulay.path, then via the path command.
- * Feel free to modify this default path for your local installation.
- * Macintosh sample: ":,A:user:Macaulay:bin:"
- * Unix sample: ".:/usr/local/math/Macaulay/bin"
- */
+// Default file search path
+// Can be modified via environment variable MacaulayPath,
+// then by the file Macaulay.path, then via the path command.
+// For Unix: use current directory as default
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+char* MclyPath = (char*)".";
+#pragma GCC diagnostic pop
 
-char *MclyPath = ".";
+// The default current directory can be initialized, but to what?
+char* MclyCdir = NULL;
 
-/* The default current directory can be initialized, but to what? */
-char *MclyCdir = NULL;
+// The location of the following two files is installation dependent.
+// If they can be found via MclyPath, no changes are needed below.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+char* helpFile = (char*)"Macaulay.help";
+char* newFile = (char*)"Macaulay.new";
+#pragma GCC diagnostic pop
 
-/*
- * The location of the following two files is installation dependent.
- * If they can be found via MclyPath, no changes are needed below.
- */
-
-char *helpFile = "Macaulay.help";
-char *newFile  = "Macaulay.new";
-
-extern int timer;
+// Timer start reference
 long startTime;
 
-/*------------------------------------------------------
- *
- *  interrupt, timer and fontsize code for Macintosh
- *
- *------------------------------------------------------*/
+// Interrupt handling using standard signals
+static volatile sig_atomic_t intFlag = 0;
 
-#define MOUSE SIGINT
-
-#include <signal.h>
-/*(*signal())();*/
-int intFlag;   /* set to 1 if an interrupt is given */
-
-void handle ()
+static void handle_signal(int sig)
 {
+    (void)sig; // unused parameter
     intFlag = 1;
-    signal(MOUSE, handle);
 }
 
-void spec_init ()
+void spec_init(void)
 {
     intFlag = 0;
-    signal(MOUSE, handle);
+    signal(SIGINT, handle_signal);
 }
 
-void intr_shell ()
+void intr_shell(void)
 {
-    if (intFlag == 1) {
+    if (intFlag)
+    {
         intFlag = 0;
         print("\n");
         shell();
-        intFlag = 0;
+        intFlag = 0; // Historical quirk: double assignment preserved
     }
 }
 
-boolean have_intr ()
+boolean have_intr(void)
 {
-    if (intFlag == 1) {
+    if (intFlag)
+    {
         rmmouse();
-        return(TRUE);
+        return TRUE;
     }
-    return(FALSE);
+    return FALSE;
 }
 
-void rmmouse ()
+void rmmouse(void)
 {
     intFlag = 0;
 }
 
-void prsetup ()
-{}
-
-void setTextSize (int n)
+// Timer implementation using standard C library
+void markTime(void)
 {
-#pragma unused(n)
+    startTime = (long)clock();
 }
 
-#define UNIX_TIMER
-#define TICK 60
-
-#include <sys/types.h>
-#include <sys/times.h>
-
-static struct tms time_buf;
-
-void markTime ()
+long nSeconds(void)
 {
-    times(&time_buf);
-    startTime = time_buf.tms_utime + time_buf.tms_stime;
+    long elapsed = (long)clock() - startTime;
+    return (long)((clock_t)elapsed / CLOCKS_PER_SEC);
 }
 
-long nSeconds ()
+long get_ticks(void)
 {
-    times(&time_buf);
-    return((time_buf.tms_utime + time_buf.tms_stime - startTime)/TICK);
+    return (long)clock();
 }
 
-long get_ticks ()
-{
-    times(&time_buf);
-    return time_buf.tms_utime + time_buf.tms_stime;
-}
-
-/*------------------------------------------------------
- *
- *  timer routine (machine indep.)
- *
- *------------------------------------------------------*/
-
-void prTime (char *str)
+// Timer display routine
+void prTime(const char* str)
 {
     long tot, s, m;
 
-    if (timer <= 0) return;
+    if (timer <= 0)
+        return;
     tot = nSeconds();
-    if (tot == 0) return;
+    if (tot == 0)
+        return;
     s = tot % 60;
     m = tot / 60;
     newline();
-    print("%s ",str);
+    print("%s ", str);
     if (m > 1)
         print("%ld minutes and ", m);
     else if (m == 1)
@@ -145,4 +112,15 @@ void prTime (char *str)
         print("%ld seconds\n", s);
     else
         print("1 second\n");
+}
+
+// Text size setting - no-op for Unix
+void setTextSize(int n)
+{
+    (void)n; // unused parameter
+}
+
+// Printer setup - historical no-op preserved
+void prsetup(void)
+{
 }

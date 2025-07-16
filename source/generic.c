@@ -1,129 +1,234 @@
-/* Copyright 1989 Dave Bayer and Mike Stillman. All rights reserved. */
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
+#include "shared.h"
+#include "generic.h"
+#include "ring.h"
 #include "vars.h"
+#include "plist.h"
+#include "boxprocs.h"
 
-// boolean do_nothing_proc ();
-// pfi message_proc (variable *p, int messtype);
-// void init_generic ();
+// Constants
+constexpr int NTYPES = 18;
 
-extern int_type();
+const char* type_names[] = { "none",    "int",         "ring",    "poly",          "matrix",
+                             "complex", "computation", "emitter", "emit standard", "res",
+                             "shift",   "collector",   "trash",   "lifter",        "merger",
+                             "nres",    "std",         "istd" };
 
-//extern vrg_type();
-//extern rgKill();
+// Type-safe vtable implementations
 
-//extern vmod_type();
-//extern mod_kill();
-
-extern st_pprint();
-extern st_kill();
-
-extern alias_type();
-
-extern st_start();
-extern boolean emit_dodeg();
-extern boolean semit_dodeg();
-extern boolean res_dodeg();
-extern boolean shift_dodeg();
-
-extern boolean istd_dodeg();
-
-extern coll_degs();
-extern coll_poly();
-extern trash_poly();
-extern lift_poly();
-extern boolean lift_enddeg();
-extern mg_degs();
-extern mg_poly();
-extern boolean mg_enddeg();
-extern ins_generator();
-extern boolean nres_enddeg();
-extern ins_nres();
-extern boolean std_enddeg();
-extern std_degs();
-
-char *type_names[] = {"none", "int", "ring", "poly", "matrix",
-                      "complex", "computation", "emitter",
-                      "emit standard",
-                      "res", "shift",
-                      "collector", "trash",
-                      "lifter", "merger", "nres", "std", "istd"
-                     };
-
-#define NTYPES 18
-pfi mint[] = {int_type, do_nothing_proc};
-pfi mring[] = {vrg_type, rgKill};
-pfi mpoly[] = {do_nothing_proc, do_nothing_proc};
-pfi mmod[] = {vmod_type, mod_kill};
-
-pfi mstarter[] = {st_pprint, st_kill,
-                  st_start
-                 };
-pfi memit[] = {alias_type, do_nothing_proc,
-               emit_dodeg
-              };
-pfi mstdemit[] = {alias_type, do_nothing_proc,
-                  semit_dodeg
-                 };
-pfi mres[] = {vmod_type, mod_kill,
-              res_dodeg
-             };
-pfi mshift[] = {do_nothing_proc, do_nothing_proc,
-                shift_dodeg
-               };
-pfi mcollect[] = {vmod_type, mod_kill,
-                  coll_degs, coll_poly, do_nothing_proc
-                 };
-pfi mtrash[] = {do_nothing_proc, do_nothing_proc,
-                do_nothing_proc,trash_poly, do_nothing_proc
-               };
-pfi mlift[] = {alias_type, do_nothing_proc,
-               mg_degs, lift_poly, lift_enddeg
-              };
-pfi mmerge[] = {do_nothing_proc, do_nothing_proc,
-                mg_degs, mg_poly, mg_enddeg
-               };
-/*pfi mnres[] = {vmod_type, mod_kill,
-                    coll_degs, ins_generator, nres_enddeg};*/
-
-pfi mnres[] = {vmod_type, mod_kill,
-               coll_degs, ins_nres, nres_enddeg
-              };
-pfi mstd[] = {vmod_type, mod_kill,
-              std_degs, ins_nres, std_enddeg
-             };
-pfi mistd[] = {vmod_type, mod_kill,
-               istd_dodeg
-              };
-
-pfi *mess[NTYPES];
-
-boolean do_nothing_proc ()
+// Helper for do-nothing handlers
+static void do_nothing_void(void* obj)
 {
-    return(TRUE);
+    (void)obj;
 }
 
-pfi message_proc (variable *p, int messtype)
+// Helper for do-nothing boolean handlers
+static boolean do_nothing_boolean(void* obj, int deg)
 {
-    if (p IS NULL) return(do_nothing_proc);
-    return(mess[p->type][messtype]);
+    (void)obj;
+    (void)deg;
+    return TRUE;
 }
 
-void init_generic ()
+// Wrapper for int_type which expects int, not void*
+static void int_type_wrapper(void* obj)
 {
-    mess[VNOTYPE] = NULL;
-    mess[VINT] = mint;
-    mess[VRING] = mring;
-    mess[VPOLY] = mpoly;
-    mess[VMODULE] = mmod;
-    mess[VSTARTER] = mstarter;
-    mess[VEMIT] = memit;
-    mess[VSTDEMIT] = mstdemit;
-    mess[VRES] = mres;
-    mess[VSHIFT] = mshift;
-    mess[VCOLLECT] = mcollect;
-    mess[VTRASH] = mtrash;
-    mess[VLIFT] = mtrash;
-    mess[VMERGE] = mmerge;
-    mess[VNRES] = mnres;
-    mess[VSTD] = mstd;
-    mess[VISTD] = mistd;
+    // In the original code, this is called with an int cast to pfi
+    // We need to handle this carefully for 64-bit systems
+    intptr_t n = (intptr_t)obj;
+    int_type((int)n);
+}
+
+// VNOTYPE (0) - No operations
+static const object_vtable null_vtable = { .get_type = NULL,
+                                           .kill = NULL,
+                                           .msg2 = { .do_degree = NULL },
+                                           .poly_receive = NULL,
+                                           .end_degree = NULL };
+
+// VINT (1)
+static const object_vtable int_vtable = { .get_type = int_type_wrapper,
+                                          .kill = do_nothing_void,
+                                          .msg2 = { .do_degree = NULL },
+                                          .poly_receive = NULL,
+                                          .end_degree = NULL };
+
+// VRING (2)
+static const object_vtable ring_vtable = { .get_type = (void (*)(void*)) vrg_type,
+                                           .kill = (void (*)(void*)) rgKill,
+                                           .msg2 = { .do_degree = NULL },
+                                           .poly_receive = NULL,
+                                           .end_degree = NULL };
+
+// VPOLY (3)
+static const object_vtable poly_vtable = { .get_type = do_nothing_void,
+                                           .kill = do_nothing_void,
+                                           .msg2 = { .do_degree = NULL },
+                                           .poly_receive = NULL,
+                                           .end_degree = NULL };
+
+// VMODULE (4)
+static const object_vtable module_vtable = { .get_type = (void (*)(void*)) vmod_type,
+                                             .kill = (void (*)(void*)) mod_kill,
+                                             .msg2 = { .do_degree = NULL },
+                                             .poly_receive = NULL,
+                                             .end_degree = NULL };
+
+// VCOMPLEX (5) - Not implemented in original
+static const object_vtable complex_vtable = { .get_type = NULL,
+                                              .kill = NULL,
+                                              .msg2 = { .do_degree = NULL },
+                                              .poly_receive = NULL,
+                                              .end_degree = NULL };
+
+// VSTARTER (6)
+static const object_vtable starter_vtable = {
+    .get_type = (void (*)(void*)) st_pprint,
+    .kill = (void (*)(void*)) st_kill,
+    .msg2 = { .start = (void (*)(void*, int, char**)) st_start },
+    .poly_receive = NULL,
+    .end_degree = NULL
+};
+
+// VEMIT (7)
+static const object_vtable emit_vtable = {
+    .get_type = (void (*)(void*)) alias_type,
+    .kill = do_nothing_void,
+    .msg2 = { .do_degree = (boolean (*)(void*, int)) emit_dodeg },
+    .poly_receive = NULL,
+    .end_degree = NULL
+};
+
+// VSTDEMIT (8)
+static const object_vtable stdemit_vtable = {
+    .get_type = (void (*)(void*)) alias_type,
+    .kill = do_nothing_void,
+    .msg2 = { .do_degree = (boolean (*)(void*, int)) semit_dodeg },
+    .poly_receive = NULL,
+    .end_degree = NULL
+};
+
+// VRES (9)
+static const object_vtable res_vtable = { .get_type = (void (*)(void*)) vmod_type,
+                                          .kill = (void (*)(void*)) mod_kill,
+                                          .msg2 = { .do_degree = (boolean (*)(void*,
+                                                                              int)) res_dodeg },
+                                          .poly_receive = NULL,
+                                          .end_degree = NULL };
+
+// VSHIFT (10)
+static const object_vtable shift_vtable = {
+    .get_type = do_nothing_void,
+    .kill = do_nothing_void,
+    .msg2 = { .do_degree = (boolean (*)(void*, int)) shift_dodeg },
+    .poly_receive = NULL,
+    .end_degree = NULL
+};
+
+// VCOLLECT (11)
+static const object_vtable collect_vtable = {
+    .get_type = (void (*)(void*)) vmod_type,
+    .kill = (void (*)(void*)) mod_kill,
+    .msg2 = { .degs_receive = (void (*)(void*, void*, int)) coll_degs },
+    .poly_receive = (void (*)(void*, poly, int)) coll_poly,
+    .end_degree = do_nothing_boolean
+};
+
+// VTRASH (12)
+static const object_vtable trash_vtable = { .get_type = do_nothing_void,
+                                            .kill = do_nothing_void,
+                                            .msg2 = { .do_degree = NULL },
+                                            .poly_receive = (void (*)(void*, poly, int)) trash_poly,
+                                            .end_degree = do_nothing_boolean };
+
+// VLIFT (13)
+static const object_vtable lift_vtable = {
+    .get_type = (void (*)(void*)) alias_type,
+    .kill = do_nothing_void,
+    .msg2 = { .degs_receive = (void (*)(void*, void*, int)) mg_degs },
+    .poly_receive = (void (*)(void*, poly, int)) lift_poly,
+    .end_degree = (boolean (*)(void*, int)) lift_enddeg
+};
+
+// VMERGE (14)
+static const object_vtable merge_vtable = {
+    .get_type = do_nothing_void,
+    .kill = do_nothing_void,
+    .msg2 = { .degs_receive = (void (*)(void*, void*, int)) mg_degs },
+    .poly_receive = (void (*)(void*, poly, int)) mg_poly,
+    .end_degree = (boolean (*)(void*, int)) mg_enddeg
+};
+
+// VNRES (15)
+static const object_vtable nres_vtable = {
+    .get_type = (void (*)(void*)) vmod_type,
+    .kill = (void (*)(void*)) mod_kill,
+    .msg2 = { .degs_receive = (void (*)(void*, void*, int)) coll_degs },
+    .poly_receive = (void (*)(void*, poly, int)) ins_nres,
+    .end_degree = (boolean (*)(void*, int)) nres_enddeg
+};
+
+// VSTD (16)
+static const object_vtable std_vtable = {
+    .get_type = (void (*)(void*)) vmod_type,
+    .kill = (void (*)(void*)) mod_kill,
+    .msg2 = { .degs_receive = (void (*)(void*, void*, int)) std_degs },
+    .poly_receive = (void (*)(void*, poly, int)) ins_nres,
+    .end_degree = (boolean (*)(void*, int)) std_enddeg
+};
+
+// VISTD (17)
+static const object_vtable istd_vtable = {
+    .get_type = (void (*)(void*)) vmod_type,
+    .kill = (void (*)(void*)) mod_kill,
+    .msg2 = { .do_degree = (boolean (*)(void*, int)) istd_dodeg },
+    .poly_receive = NULL,
+    .end_degree = NULL
+};
+
+// Static vtable array
+static const object_vtable* vtables[NTYPES] = {
+    [VNOTYPE] = &null_vtable,     [VINT] = &int_vtable,       [VRING] = &ring_vtable,
+    [VPOLY] = &poly_vtable,       [VMODULE] = &module_vtable, [VCOMPLEX] = &complex_vtable,
+    [VSTARTER] = &starter_vtable, [VEMIT] = &emit_vtable,     [VSTDEMIT] = &stdemit_vtable,
+    [VRES] = &res_vtable,         [VSHIFT] = &shift_vtable,   [VCOLLECT] = &collect_vtable,
+    [VTRASH] = &trash_vtable,     [VLIFT] = &lift_vtable,     [VMERGE] = &merge_vtable,
+    [VNRES] = &nres_vtable,       [VSTD] = &std_vtable,       [VISTD] = &istd_vtable
+};
+
+// Type-safe vtable dispatch functions
+const object_vtable*get_vtable(int type)
+{
+    if (type < 0 || type >= NTYPES)
+        return NULL;
+    return vtables[type];
+}
+
+void*get_message_handler(int type, int message)
+{
+    if (type < 0 || type >= NTYPES)
+        return NULL;
+
+    const object_vtable* vtable = vtables[type];
+    if (!vtable)
+        return NULL;
+
+    switch (message)
+    {
+    case MTYPE:
+        return (void*)vtable->get_type;
+    case MKILL:
+        return (void*)vtable->kill;
+    case MSTART:  // Same as MDODEG and MDEGS_RECEIVE (all are 2)
+                  // These share the same slot in the union
+        return (void*)vtable->msg2.do_degree;
+    case MPOLY_RECEIVE:
+        return (void*)vtable->poly_receive;
+    case MENDDEG:
+        return (void*)vtable->end_degree;
+    default:
+        return NULL;
+    }
 }

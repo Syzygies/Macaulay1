@@ -1,86 +1,92 @@
-/* Copyright 1989 Dave Bayer and Mike Stillman. All rights reserved. */
-#include "mtypes.h"
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
-// void mo_init (gmatrix M);
-// void mo_kill (gmatrix M);
-// void mo_insert (gmatrix M, term t, int i);
-// void mo_rg_insert (term t, int i);
-// boolean mo_iscomplete (gmatrix M, int deg);
-// void mo_reset (gmatrix M, int *i, int *j);
-// void mo_rgreset (int *i, int *j, int jmax);
-// boolean mo_next_pair (gmatrix M, int deg, int *i, int *j);
-// boolean mo_rg_pair (gmatrix M, int deg, int *i, int *j);
-// int tdegree (gmatrix M, term t);
-// boolean mo_find_div (gmatrix M, term t, int *i, term s);
-// boolean mo_rg_div (plist *pl, term t, int *i, term s);
+#include "shared.h"
+#include "monoms.h"
+#include "hilb.h"
+#include "term.h"
 
-/* the stuff in this file is temporary, until Dave's monomial package
-        is included.  The routines have slightly different interfaces
-        than the real ones will have, so it might take a
-        little work */
+// the stuff in this file is temporary, until Dave's monomial package
+// is included.  The routines have slightly different interfaces
+// than the real ones will have, so it might take a
+// little work
 
-void mo_init (gmatrix M)
+void mo_init(gmatrix M)
 {
     mn_init(M);
 }
 
-void mo_kill (gmatrix M)
+void mo_kill(gmatrix M)
 {
     mn_kill(M);
 }
 
-void mo_insert (gmatrix M, term t, int i)
+void mo_insert(gmatrix M, term t, char* i)
 {
     mn_insert(M, t, i);
 }
 
-void mo_rg_insert (term t, int i)
+void mo_rg_insert(term t, char* i)
 {
-#pragma unused(t,i)
+    // Stub function - does nothing
+    (void)t;  // suppress unused parameter warning
+    (void)i;
 }
 
-boolean mo_iscomplete (gmatrix M, int deg)
+boolean mo_iscomplete(gmatrix M, int deg)
 {
-#pragma unused(deg)
-    return(mn_iscomplete(M));
+    (void)deg; // suppress unused parameter warning
+    return mn_iscomplete(M);
 }
 
-void mo_reset (gmatrix M, int *i, int *j)
+void mo_reset(gmatrix M, char** i, char** j)
 {
-#pragma unused(M,i,j)
+    // Stub function - does nothing
+    (void)M;  // suppress unused parameter warning
+    (void)i;
+    (void)j;
 }
 
-void mo_rgreset (int *i, int *j, int jmax)
+void mo_rgreset(char** i, char** j, int jmax)
 {
-#pragma unused(i,j,jmax)
+    // Stub function - does nothing
+    (void)i;  // suppress unused parameter warning
+    (void)j;
+    (void)jmax;
 }
 
-boolean mo_next_pair (gmatrix M, int deg, int *i, int *j)
+boolean mo_next_pair(gmatrix M, int deg, char** i, char** j)
 {
-    return(mn_next_pair(M, deg, i, j));
+    return mn_next_pair(M, deg, i, j);
 }
 
-boolean mo_rg_pair (gmatrix M, int deg, int *i, int *j)
+boolean mo_rg_pair(gmatrix M, int deg, char** i, char** j)
 {
-#pragma unused(M,deg,i,j)
-    return(FALSE); /* for now, never do any such pairs */
+    (void)M; // suppress unused parameter warning
+    (void)deg;
+    (void)i;
+    (void)j;
+    return 0; // for now, never do any such pairs
 }
 
-int tdegree (gmatrix M, term t)
+int tdegree(gmatrix M, term t)
 {
     int result;
 
-    result = DREF(M->degrees, tm_component(t)) + tm_degree(t);
-    return(result);
+    result = dlist_ref(&(M->degrees), tm_component(t)) + tm_degree(t);
+    return result;
 }
 
-boolean mo_find_div (gmatrix M, term t, int *i, term s)
+boolean mo_find_div(gmatrix M, term t, char** i, term s)
 {
-    return(mn_find_div(&M->montab, t, i, s));
+    return mn_find_div(&M->montab, t, i, s);
 }
 
-boolean mo_rg_div (plist *pl, term t, int *i, term s)
+boolean mo_rg_div(plist* pl, term t, char** i, term s)
 {
-#pragma unused(pl,t,i,s)
-    return(FALSE);
+    (void)pl; // suppress unused parameter warning
+    (void)t;
+    (void)i;
+    (void)s;
+    return 0;
 }

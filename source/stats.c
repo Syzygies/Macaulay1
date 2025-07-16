@@ -1,9 +1,11 @@
-/* Copyright 1989 Dave Bayer and Mike Stillman. All rights reserved. */
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
-// void i_stats ();
-// void pr_stats ();
+#include "shared.h"
+#include "stats.h"
+#include "monitor.h" // For print()
 
-#ifdef STATISTICS
+// Always define these variables, regardless of STATISTICS
 long stcomp;
 long stadd;
 long stradd;
@@ -11,13 +13,15 @@ long stdiv;
 long stloop;
 long stspecial;
 
-void i_stats ()
+#ifdef STATISTICS
+
+void i_stats(void)
 {
     stcomp = stadd = stradd = 0L;
     stdiv = stloop = stspecial = 0L;
 }
 
-void pr_stats ()
+void pr_stats(void)
 {
     print("# tm_compare  = %ld\n", stcomp);
     print("# tm_add      = %ld\n", stadd);
@@ -28,9 +32,14 @@ void pr_stats ()
 
 #else
 
-void i_stats ()
-{};
-void pr_stats ()
-{};
+void i_stats(void)
+{
+    stcomp = stadd = stradd = 0L;
+    stdiv = stloop = stspecial = 0L;
+}
+
+void pr_stats(void)
+{
+}
 
 #endif

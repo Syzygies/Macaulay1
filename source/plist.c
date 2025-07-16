@@ -1,66 +1,65 @@
-/* Copyright 1989 Dave Bayer and Mike Stillman. All rights reserved. */
-#include "mtypes.h"
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
-// void dl_copy (dlist *dl1, dlist *dl2);
-// void pl_copy (plist *pl1, plist *pl2);
-// void pl_kill (plist *pl);
-// void dl_kill (dlist *dl);
-// void dl_lohi (dlist *dl, int *lo, int *hi);
-// gmatrix mod_init ();
-// gmatrix mat_copy (gmatrix M);
-// void std_kill (mn_standard p);
-// void mod_kill (gmatrix M);
-// int degree (gmatrix M, poly f);
+#include "shared.h"
+#include "plist.h"
+#include "mem.h"
+#include "poly.h"
+#include "term.h"
+#include "monoms.h"
+#include "stash.h"
 
-void dl_copy (dlist *dl1, dlist *dl2)
+void dl_copy(dlist *dl1, dlist *dl2)
+{
+    register int i;
+
+    dlist_init(dl2);
+    for (i = 1; i <= array_length((array *)dl1); i++)
+        dlist_insert(dl2, dlist_ref(dl1, i));
+}
+
+void pl_copy(plist *pl1, plist *pl2)
+{
+    register int i;
+
+    plist_init(pl2);
+    for (i = 1; i <= array_length((array *)pl1); i++)
+        plist_insert(pl2, p_copy(plist_ref(pl1, i)));
+}
+
+void pl_kill(plist *pl)
 {
     int i;
+    poly *p;
 
-    dl_init(dl2);
-    for (i=1; i<=LENGTH(*dl1); i++)
-        dl_insert(dl2, DREF(*dl1, i));
+    for (i = 1; i <= array_length((array *)pl); i++)
+    {
+        p = (poly *)ref((array *)pl, i);
+        p_kill(p);
+    }
+    free_array((array *)pl);
 }
 
-void pl_copy (plist *pl1, plist *pl2)
+void dl_kill(dlist *dl)
 {
-    int i;
-
-    pl_init(pl2);
-    for (i=1; i<=LENGTH(*pl1); i++)
-        pl_insert(pl2, p_copy(PREF(*pl1, i)));
+    free_array((array *)dl);
 }
 
-void pl_kill (plist *pl)
-{
-    int i;
-
-    for (i=1; i<=LENGTH(*pl); i++)
-        p_kill(&PREF(*pl, i));
-    free_array(pl);
-}
-
-void dl_kill (dlist *dl)
-{
-    free_array(dl);
-}
-
-/* dl_lohi puts into "lo", and "hi", the degree of the lowest and highest
-        integer of "dl".
-*/
-
-void dl_lohi (dlist *dl, int *lo, int *hi)
+void dl_lohi(dlist *dl, int *lo, int *hi)
 {
     int i, d;
 
-    if (length(dl) IS 0) {
+    if (array_length((array *)dl) == 0)
+    {
         *lo = 0;
         *hi = 0;
         return;
     }
-    *lo = DREF(*dl, 1);
+    *lo = dlist_ref(dl, 1);
     *hi = *lo;
-    for (i=2; i<=length(dl); i++) {
-        d = DREF(*dl, i);
+    for (i = 2; i <= array_length((array *)dl); i++)
+    {
+        d = dlist_ref(dl, i);
         if (d < *lo)
             *lo = d;
         else if (d > *hi)
@@ -68,23 +67,23 @@ void dl_lohi (dlist *dl, int *lo, int *hi)
     }
 }
 
-gmatrix mod_init ()
+gmatrix mod_init(void)
 {
     gmatrix M;
 
     M = new_mod();
     M->next = NULL;
     M->modtype = MMAT;
-    dl_init(&(M->degrees));
-    dl_init(&(M->deggens));
-    pl_init(&(M->gens));
+    dlist_init(&(M->degrees));
+    dlist_init(&(M->deggens));
+    plist_init(&(M->gens));
     M->nstandard = 0;
     M->stdbasis = NULL;
     mo_init(M);
-    return(M);
+    return (M);
 }
 
-gmatrix mat_copy (gmatrix M)
+gmatrix mat_copy(gmatrix M)
 {
     gmatrix result;
 
@@ -97,37 +96,39 @@ gmatrix mat_copy (gmatrix M)
     result->nstandard = 0;
     result->stdbasis = NULL;
     mo_init(result);
-    return(result);
+    return (result);
 }
 
-void std_kill (mn_standard p)
+void std_kill(mn_standard p)
 {
     mn_standard temp;
 
-    while (p ISNT NULL) {
+    while (p != NULL)
+    {
         temp = p;
         p = p->next;
         p_kill(&temp->standard);
         p_kill(&temp->change);
-        free_slug(std_stash, temp);
+        free_slug((struct stash *)std_stash, (struct slug *)temp);
     }
 }
 
-void mod_kill (gmatrix M)
+void mod_kill(gmatrix M)
 {
-    if (M IS NULL) return;
+    if (M == NULL)
+        return;
     dl_kill(&(M->degrees));
     dl_kill(&(M->deggens));
     pl_kill(&(M->gens));
     std_kill(M->stdbasis);
     M->nstandard = 0;
     mo_kill(M);
-    free_slug(mod_stash, M);
+    free_slug((struct stash *)mod_stash, (struct slug *)M);
 }
 
-int degree (gmatrix M, poly f)
+int degree(gmatrix M, poly f)
 {
-    if (f IS NULL) return(0);
-    return(tm_degree(INITIAL(f)) + DREF(M->degrees,
-                                        tm_component(INITIAL(f))));
+    if (f == NULL)
+        return (0);
+    return (tm_degree(poly_initial(f)) + dlist_ref(&M->degrees, tm_component(poly_initial(f))));
 }

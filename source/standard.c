@@ -1,37 +1,107 @@
-/* Copyright 1989 Dave Bayer and Mike Stillman. All rights reserved. */
-#include "vars.h"
-#include "stats.h"
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
-// void init_division ();
-// void deb_print (poly f, int n);
-// poly reduce (gmatrix M, poly *f);
-// void division (gmatrix M, poly *f, poly *g, poly *h);
-// boolean calc_standard (gmatrix M, int deg, variable *B);
-void send_off (gmatrix M, int deg, variable *B, poly h, poly hrep);
-void calc_s_pair (gmatrix M, mn_standard i, mn_standard j, poly *h, poly *hrep);
-void ins_elem (gmatrix M, int deg, poly h, poly hrep);
-void auto_reduce (gmatrix M, int deg, poly h, poly hrep);
-// boolean occurs_in (poly f, term t, field *a);
-// void orig_gens (gmatrix M, int deg, int intval, variable *box);
-// void ins_generator (variable *box, poly f, int deg);
-void div_sub (poly *f1, field a, term t, poly h1);
-void auto_sub (poly *f1, field a, poly h1);
+#include <stdio.h>
+#include "shared.h"
+#include "standard.h"
+#include "poly.h"
+#include "term.h"
+#include "monoms.h"
+#include "plist.h"
+#include "monitor.h"
+#include "shell.h"
+#include "stash.h"
+#include "gmatrix.h"
+#include "charp.h"
+#include "vars.h"
+#include "array.h"
+#include "human_io.h"
+#include "mac.h"
+#include "betti.h"
+#include "set.h"   // autoReduce, showpairs, verbose
+#include "mem.h"   // std_stash
+#include "ring.h"  // pStash
+#include "stats.h" // stdiv, stloop
 
 poly divnode;
-extern int autoReduce; /* >0 means don't autoreduce */
-extern int showpairs;  /* >0 means call spairs_flush */
 
-void init_division ()
+// Inline functions to replace macros
+static inline term INITIAL(poly f)
+{
+    return (term)(f->monom);
+}
+
+static inline field LEAD_COEF(poly g)
+{
+    return g->coef;
+}
+
+static inline int LENGTH(array a)
+{
+    return length(&a);
+}
+
+static inline gmatrix VAR_MODULE(variable *p)
+{
+    return (gmatrix)(p->value);
+}
+
+static inline poly PREF(plist pl, int i)
+{
+    return plist_ref(&pl, i);
+}
+
+static inline int DREF(dlist dl, int i)
+{
+    return dlist_ref(&dl, i);
+}
+
+static inline void pl_insert(plist *pl, poly f)
+{
+    plist_insert(pl, f);
+}
+
+static inline void dl_insert(dlist *dl, int i)
+{
+    dlist_insert(dl, i);
+}
+
+// TODO: This should be replaced with actual function when vars.h is complete
+static inline void send_poly(variable *box, poly f, int deg)
+{
+    // send_poly stub
+    (void)box;
+    (void)f;
+    (void)deg;
+}
+
+// Statistics inline function - no-op unless STATISTICS is defined
+#ifdef STATISTICS
+static inline void STAT(long *x)
+{
+    (*x)++;
+}
+
+#else
+static inline void STAT(long *x)
+{
+    (void)x; // no-op
+}
+
+#endif
+
+void init_division(void)
 {
     divnode = p_listhead();
 }
 
-void deb_print (poly f, int n)
+void deb_print(poly f, int n)
 {
     int i;
 
     print("[");
-    for (i=1; i<n; i++) {
+    for (i = 1; i < n; i++)
+    {
         p_pprint(stdout, f, i);
         print(", ");
     }
@@ -39,48 +109,60 @@ void deb_print (poly f, int n)
     print("]\n");
 }
 
-poly reduce (gmatrix M, poly *f)
+poly reduce(gmatrix M, poly *f)
 {
     mn_standard i;
     allocterm t;
     poly inresult;
 
     inresult = divnode;
-    while (*f ISNT NULL) {
-        if (mo_find_div(M, INITIAL(*f), &i, t)) {
+    while (*f != NULL)
+    {
+        if (mo_find_div(M, INITIAL(*f), (char **)&i, t))
+        {
             div_sub(f, LEAD_COEF(*f), t, i->standard);
-        } else if (autoReduce <= 0) {
+        }
+        else if (autoReduce <= 0)
+        {
             inresult->next = *f;
             inresult = *f;
             *f = (*f)->next;
-        } else {
+        }
+        else
+        {
             inresult->next = *f;
-            return(divnode->next);
+            return divnode->next;
         }
     }
     inresult->next = NULL;
-    return(divnode->next);
+    return divnode->next;
 }
 
-void division (gmatrix M, poly *f, poly *g, poly *h)
+void division(gmatrix M, poly *f, poly *g, poly *h)
 {
     poly inresult;
     mn_standard i;
     allocterm t;
 
-    STAT(stdiv);
+    STAT(&stdiv);
     *g = NULL;
     inresult = divnode;
-    while (*f ISNT NULL) {
-        STAT(stloop);
-        if (mo_find_div(M, INITIAL(*f), &i, t)) {
+    while (*f != NULL)
+    {
+        STAT(&stloop);
+        if (mo_find_div(M, INITIAL(*f), (char **)&i, t))
+        {
             div_sub(g, LEAD_COEF(*f), t, i->change);
             div_sub(f, LEAD_COEF(*f), t, i->standard);
-        } else if (autoReduce <= 0) {
+        }
+        else if (autoReduce <= 0)
+        {
             inresult->next = *f;
             inresult = *f;
             *f = (*f)->next;
-        } else {
+        }
+        else
+        {
             inresult->next = *f;
             *f = NULL;
             *h = divnode->next;
@@ -91,98 +173,109 @@ void division (gmatrix M, poly *f, poly *g, poly *h)
     *h = divnode->next;
 }
 
-/*------ calc. standard basis routines -----------------*/
+// calc. standard basis routines
 
-boolean calc_standard (gmatrix M, int deg, variable *B)
+boolean calc_standard(gmatrix M, int deg, variable *B)
 {
     mn_standard i, j;
     poly h, hrep;
 
-    if (ncols(M) > 0) {
+    if (ncols(M) > 0)
+    {
         prflush(".");
         if (showpairs > 0)
             spairs_flush(M);
     }
-    mo_reset(M, &i, &j);
-    while (mo_next_pair(M, deg, &i, &j)) {
+    mo_reset(M, (char **)&i, (char **)&j);
+    while (mo_next_pair(M, deg, (char **)&i, (char **)&j))
+    {
         calc_s_pair(M, i, j, &h, &hrep);
         send_off(M, deg, B, h, hrep);
     }
-    return(mo_iscomplete(M, deg));
+    return mo_iscomplete(M, deg);
 }
 
-extern int showapair;
-
-void send_off (gmatrix M, int deg, variable *B, poly h, poly hrep)
+void send_off(gmatrix M, int deg, variable *B, poly h, poly hrep)
 {
-    if (showapair) {
+    if (showapair)
+    {
         spairs_flush(M);
         showapair = 0;
     }
-    if (h ISNT NULL) {
+    if (h != NULL)
+    {
         ins_elem(M, deg, h, hrep);
-        if (verbose > 0) {
+        if (verbose > 0)
+        {
             prflush("m");
-            if (showpairs > 2) spairs_flush(M);
+            if (showpairs > 2)
+                spairs_flush(M);
         }
-    } else if (hrep ISNT NULL) {
+    }
+    else if (hrep != NULL)
+    {
         send_poly(B, hrep, deg);
-        if (verbose > 0) {
+        if (verbose > 0)
+        {
             prflush("s");
-            if (showpairs > 3) spairs_flush(M);
+            if (showpairs > 3)
+                spairs_flush(M);
         }
-    } else if (verbose > 0) {
+    }
+    else if (verbose > 0)
+    {
         prflush("o");
-        if (showpairs > 3) spairs_flush(M);
+        if (showpairs > 3)
+            spairs_flush(M);
     }
     intr_shell();
-} /* 5/18/89 DB 5/6 */
+} // 5/18/89 DB 5/6
 
-void calc_s_pair (gmatrix M, mn_standard i, mn_standard j, poly *h, poly *hrep)
+void calc_s_pair(gmatrix M, mn_standard i, mn_standard j, poly *h, poly *hrep)
 {
     allocterm s1, s2;
     poly f, k;
 
-    tm_joinminus(INITIAL(i->standard),
-                 INITIAL(j->standard),
-                 s1, s2);
-    f = mult_sub(s1, i->standard,
-                 s2, j->standard);
-    k = mult_sub(s1, i->change,
-                 s2, j->change);
+    tm_joinminus(INITIAL(i->standard), INITIAL(j->standard), s1, s2);
+    f = mult_sub(s1, i->standard, s2, j->standard);
+    k = mult_sub(s1, i->change, s2, j->change);
     division(M, &f, hrep, h);
     p_add(hrep, &k);
 }
 
-void ins_elem (gmatrix M, int deg, poly h, poly hrep)
+void ins_elem(gmatrix M, int deg, poly h, poly hrep)
 {
     mn_standard i;
 
     make2_monic(&h, &hrep);
-    i = (mn_standard) get_slug(std_stash);
+    i = (mn_standard)(void *)get_slug((struct stash *)std_stash);
     i->standard = h;
     i->change = hrep;
     i->next = M->stdbasis;
-    i->ismin = (char) TRUE;
+    i->ismin = TRUE;
     i->degree = deg;
     M->stdbasis = i;
     M->nstandard++;
     M->modtype = MSTD;
-    mo_insert(M, INITIAL(h), i);
-    if (autoReduce <= 0) auto_reduce(M, deg, h, hrep);
+    mo_insert(M, INITIAL(h), (char *)i);
+    if (autoReduce <= 0)
+        auto_reduce(M, deg, h, hrep);
 }
 
-void auto_reduce (gmatrix M, int deg, poly h, poly hrep)
+void auto_reduce(gmatrix M, int deg, poly h, poly hrep)
 {
     mn_standard i;
     field a;
 
-    /* assertion: h is monic */
+    // assertion: h is monic
 
-    i = M->stdbasis->next; /* don't start with current (h,hrep) */
-    while ((i ISNT NULL) AND (i->degree IS deg)) {
-        if (occurs_in(i->standard, INITIAL(h), &a)) {
-            if (verbose > 0) prflush("a");
+    i = M->stdbasis->next; // don't start with current (h,hrep)
+    while ((i != NULL) && (i->degree == deg))
+    {
+        if (occurs_in(i->standard, INITIAL(h), &a))
+        {
+            if (verbose > 0)
+                prflush("a");
             auto_sub(&i->standard, a, h);
             auto_sub(&i->change, a, hrep);
         }
@@ -190,34 +283,37 @@ void auto_reduce (gmatrix M, int deg, poly h, poly hrep)
     }
 }
 
-boolean occurs_in (poly f, term t, field *a)
+boolean occurs_in(poly f, term t, field *a)
 {
     int comp;
 
-    while (f ISNT NULL) {
+    while (f != NULL)
+    {
         comp = tm_compare(INITIAL(f), t);
-        if (comp IS LT) return(FALSE);
-        if (comp IS EQ) {
+        if (comp == LT)
+            return FALSE;
+        if (comp == EQ)
+        {
             *a = LEAD_COEF(f);
-            return(TRUE);
+            return TRUE;
         }
         f = f->next;
     }
-    return(FALSE);
+    return FALSE;
 }
 
-/*-----------------------------------------------------------*/
-
-void orig_gens (gmatrix M, int deg, int intval, variable *box)
+void orig_gens(gmatrix M, int deg, int intval, variable *box)
 {
     int i;
     poly f, h, hrep, k;
 
-    for (i=1; i<=LENGTH(M->gens); i++)
-        if (DREF(M->deggens, i) IS deg) {
+    for (i = 1; i <= LENGTH(M->gens); i++)
+        if (DREF(M->deggens, i) == deg)
+        {
             f = p_copy(PREF(M->gens, i));
             division(M, &f, &hrep, &h);
-            if ((intval < 0) OR (intval >= i)) {
+            if ((intval < 0) || (intval >= i))
+            {
                 k = e_sub_i(i);
                 p_add(&hrep, &k);
             }
@@ -225,7 +321,7 @@ void orig_gens (gmatrix M, int deg, int intval, variable *box)
         }
 }
 
-void ins_generator (variable *box, poly f, int deg)
+void ins_generator(variable *box, poly f, int deg)
 {
     poly h, hrep;
     int i;
@@ -234,50 +330,74 @@ void ins_generator (variable *box, poly f, int deg)
     M = VAR_MODULE(box);
     h = reduce(M, &f);
 
-    if (h IS NULL) return;
+    if (h == NULL)
+        return;
     make1_monic(&h);
     pl_insert(&(M->gens), h);
     i = LENGTH(M->gens);
     dl_insert(&(M->deggens), deg);
     h = p_copy(h);
-    if ((box->intval < 0) OR (box->intval >= i))
+    if ((box->intval < 0) || (box->intval >= i))
         hrep = e_sub_i(i);
-    else hrep = NULL;
+    else
+        hrep = NULL;
     ins_elem(M, deg, h, hrep);
 }
 
-/*----- added 6/20/91 MES --------------------------*/
+// added 6/20/91 MES - converted to inline functions 2025
 
-extern poly addnode;
+// Helper function to allocate and initialize a polynomial node
+static inline poly alloc_poly_node(void)
+{
+    poly p = (poly)(void *)get_slug((struct stash *)pStash);
+    // Initialize monom pointer like p_monom does
+    size_t offset = sizeof(struct pol);
+    offset = (offset + sizeof(int) - 1) & ~(sizeof(int) - 1);
+    p->monom = (char *)p + offset;
+    return p;
+}
 
-#define H_NULL  {  if (h IS NULL) { \
-             inresult->next = f; \
-             *f1 = addnode->next; \
-             return; \
-           } \
-           nexth = (poly) get_slug(pStash); \
-           tm_add(INITIAL(h), big, INITIAL(nexth)); \
-         }
+// Process h == NULL case in div_sub
+static inline bool check_h_null(poly h, poly f, poly inresult, poly *f1)
+{
+    if (h == NULL)
+    {
+        inresult->next = f;
+        *f1 = addnode->next;
+        return true; // Signal caller to return
+    }
+    return false;
+}
 
-#define F_NULL  {  if (f IS NULL) { \
-             while (TRUE) { \
-            nexth->coef = normalize(-a*h->coef); \
-            inresult->next = nexth; \
-            inresult = nexth; \
-            h = h->next; \
-            H_NULL \
-              } \
-           } \
-         }
+// Process f == NULL case in div_sub
+static inline void process_f_null(poly *f, poly *h, poly *inresult, poly *nexth, field a,
+                                  bigterm big, poly *f1)
+{
+    if (*f == NULL)
+    {
+        while (true)
+        {
+            (*nexth)->coef = normalize(-(long)a * (long)(*h)->coef);
+            (*inresult)->next = *nexth;
+            *inresult = *nexth;
+            *h = (*h)->next;
 
-/* div_sub:  computes f := f - a.t.h
- *   where a,t,h are not modified
- *   and  a = field elem,
- *        t = bigterm
- *        h = polynomial (in a module)
- */
+            if (check_h_null(*h, *f, *inresult, f1))
+                return;
 
-void div_sub (poly *f1, field a, term t, poly h1)
+            *nexth = alloc_poly_node();
+            tm_add(INITIAL(*h), big, INITIAL(*nexth));
+        }
+    }
+}
+
+// div_sub:  computes f := f - a.t.h
+// where a,t,h are not modified
+// and  a = field elem,
+// t = bigterm
+// h = polynomial (in a module)
+
+void div_sub(poly *f1, field a, term t, poly h1)
 {
     poly inresult = addnode;
     poly f = *f1;
@@ -287,109 +407,164 @@ void div_sub (poly *f1, field a, term t, poly h1)
     bigterm big;
 
     sToBig(t, big);
-    H_NULL;
-    F_NULL;
 
-    while (TRUE) {
-        switch (tm_compare(INITIAL(f), INITIAL(nexth))) {
+    // Check initial h == NULL case
+    if (check_h_null(h, f, inresult, f1))
+        return;
+
+    // Allocate and initialize nexth
+    nexth = alloc_poly_node();
+    tm_add(INITIAL(h), big, INITIAL(nexth));
+
+    // Process f == NULL case
+    process_f_null(&f, &h, &inresult, &nexth, a, big, f1);
+    if (f == NULL)
+        return;
+
+    while (true)
+    {
+        switch (tm_compare(INITIAL(f), INITIAL(nexth)))
+        {
         case GT:
             inresult->next = f;
             inresult = f;
             f = f->next;
-            F_NULL;
+            process_f_null(&f, &h, &inresult, &nexth, a, big, f1);
+            if (f == NULL)
+                return;
             break;
         case LT:
-            nexth->coef = normalize(-a*h->coef);
+            nexth->coef = normalize(-(long)a * (long)h->coef);
             inresult->next = nexth;
             inresult = nexth;
             h = h->next;
-            H_NULL;
+            if (check_h_null(h, f, inresult, f1))
+                return;
+            nexth = alloc_poly_node();
+            tm_add(INITIAL(h), big, INITIAL(nexth));
             break;
         case EQ:
-            f->coef = normalize(f->coef - a * h->coef);
-            if (f->coef IS 0) {
+            f->coef = normalize((long)f->coef - (long)a * (long)h->coef);
+            if (f->coef == 0)
+            {
                 temp = f;
                 f = f->next;
-                free_slug(pStash, temp);
-            } else {
+                free_slug((struct stash *)pStash, (struct slug *)temp);
+            }
+            else
+            {
                 inresult->next = f;
                 inresult = f;
                 f = f->next;
             }
-            free_slug(pStash, nexth);
+            free_slug((struct stash *)pStash, (struct slug *)nexth);
             h = h->next;
-            H_NULL;
-            F_NULL;
+            if (check_h_null(h, f, inresult, f1))
+                return;
+            nexth = alloc_poly_node();
+            tm_add(INITIAL(h), big, INITIAL(nexth));
+            process_f_null(&f, &h, &inresult, &nexth, a, big, f1);
+            if (f == NULL)
+                return;
             break;
         }
     }
 }
 
-/*---------------- div_sub for auto reduction ------------------*/
+// div_sub for auto reduction
 
-/* computes:  f1 := f1 - a*h1 */
+// computes:  f1 := f1 - a*h1
 
-#define H_AUTO_NULL {  if (h IS NULL) { \
-             inresult->next = f; \
-             *f1 = addnode->next; \
-             return; \
-           } \
-         }
+// Process h == NULL case in auto_sub
+static inline bool check_h_auto_null(poly h, poly f, poly inresult, poly *f1)
+{
+    if (h == NULL)
+    {
+        inresult->next = f;
+        *f1 = addnode->next;
+        return true; // Signal caller to return
+    }
+    return false;
+}
 
-#define F_AUTO_NULL {  if (f IS NULL) { \
-             while (TRUE) { \
-            temp = (poly) get_slug(pStash); \
-            temp->coef = normalize(-a*h->coef); \
-            tm_copy(INITIAL(h), INITIAL(temp)); \
-            inresult->next = temp; \
-            inresult = temp; \
-            h = h->next; \
-            H_AUTO_NULL \
-              } \
-           } \
-         }
+// Process f == NULL case in auto_sub
+static inline void process_f_auto_null(poly *f, poly *h, poly *inresult, field a, poly *f1)
+{
+    if (*f == NULL)
+    {
+        while (true)
+        {
+            poly temp = (poly)(void *)get_slug((struct stash *)pStash);
+            temp->coef = normalize(-(long)a * (long)(*h)->coef);
+            tm_copy(INITIAL(*h), INITIAL(temp));
+            (*inresult)->next = temp;
+            *inresult = temp;
+            *h = (*h)->next;
 
-void auto_sub (poly *f1, field a, poly h1)
+            if (check_h_auto_null(*h, *f, *inresult, f1))
+                return;
+        }
+    }
+}
+
+void auto_sub(poly *f1, field a, poly h1)
 {
     poly inresult = addnode;
     poly f = *f1;
     poly h = h1;
     poly temp;
 
-    H_AUTO_NULL;
-    F_AUTO_NULL;
+    // Check initial h == NULL case
+    if (check_h_auto_null(h, f, inresult, f1))
+        return;
 
-    while (TRUE) {
-        switch (tm_compare(INITIAL(f), INITIAL(h))) {
+    // Process f == NULL case
+    process_f_auto_null(&f, &h, &inresult, a, f1);
+    if (f == NULL)
+        return;
+
+    while (true)
+    {
+        switch (tm_compare(INITIAL(f), INITIAL(h)))
+        {
         case GT:
             inresult->next = f;
             inresult = f;
             f = f->next;
-            F_AUTO_NULL;
+            process_f_auto_null(&f, &h, &inresult, a, f1);
+            if (f == NULL)
+                return;
             break;
         case LT:
-            temp = (poly) get_slug(pStash);
-            temp->coef = normalize(-a*h->coef);
+            temp = (poly)(void *)get_slug((struct stash *)pStash);
+            temp->coef = normalize(-(long)a * (long)h->coef);
             tm_copy(INITIAL(h), INITIAL(temp));
             inresult->next = temp;
             inresult = temp;
             h = h->next;
-            H_AUTO_NULL;
+            if (check_h_auto_null(h, f, inresult, f1))
+                return;
             break;
         case EQ:
-            f->coef = normalize(f->coef - a * h->coef);
-            if (f->coef IS 0) {
+            f->coef = normalize((long)f->coef - (long)a * (long)h->coef);
+            if (f->coef == 0)
+            {
                 temp = f;
                 f = f->next;
-                free_slug(pStash, temp);
-            } else {
+                free_slug((struct stash *)pStash, (struct slug *)temp);
+            }
+            else
+            {
                 inresult->next = f;
                 inresult = f;
                 f = f->next;
             }
             h = h->next;
-            H_AUTO_NULL;
-            F_AUTO_NULL;
+            if (check_h_auto_null(h, f, inresult, f1))
+                return;
+            process_f_auto_null(&f, &h, &inresult, a, f1);
+            if (f == NULL)
+                return;
             break;
         }
     }

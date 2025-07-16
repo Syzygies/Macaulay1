@@ -1,18 +1,8 @@
-/* Copyright 1989 Dave Bayer and Mike Stillman. All rights reserved. */
-#include "mtypes.h"
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
-// void init_charp (int characteristic);
-// field normalize (arith n);
-// void gcd_extended (arith a, arith b, arith *u, arith *v, arith *g);
-// void lift (int m, int c, int *v2, int *v3);
-// void fd_add (field a, field b, field *c);
-// void fd_sub (field a, field b, field *c);
-// void fd_mult (field a, field b, field *c);
-// void fd_negate (field *a);
-// void fd_div (field a, field b, field *c);
-// void fd_recip (field *a);
-// field fd_copy (field a);
-// boolean fd_iszero (field a);
+#include "shared.h"
+#include "charp.h"
 
 typedef long int arith;
 
@@ -25,34 +15,39 @@ field fd_zero = 0;
 field fd_one = 1;
 int field_size = sizeof(field);
 
-void init_charp (int characteristic)
+void init_charp(int characteristic)
 {
     charac = characteristic;
     characl = charac;
-    if (charac IS 2) {
+    if (charac == 2)
+    {
         half_pos = 1;
         half_neg = 0;
-    } else {
-        half_pos = (charac-1) / 2;
-        half_neg = - half_pos;
+    }
+    else
+    {
+        half_pos = (charac - 1) / 2;
+        half_neg = -half_pos;
     }
 }
 
-field normalize (arith n)
+field normalize(arith n)
 {
-    field a;
+    register field a;
 
-    a = n % charac;
-    if (a < half_neg) a += charac;
-    else if (a > half_pos) a -= charac;
-    return(a);
+    a = (field)(n % charac);
+    if (a < half_neg)
+        a = (field)(a + charac);
+    else if (a > half_pos)
+        a = (field)(a - charac);
+    return (a);
 }
 
-void gcd_extended (arith a, arith b, arith *u, arith *v, arith *g)
+void gcd_extended(arith a, arith b, arith* u, arith* v, arith* g)
 {
-    arith q;
-    arith u1, v1, g1;
-    arith utemp, vtemp, gtemp;
+    register arith q;
+    register arith u1, v1, g1;
+    register arith utemp, vtemp, gtemp;
 
     g1 = b;
     u1 = 0;
@@ -60,12 +55,12 @@ void gcd_extended (arith a, arith b, arith *u, arith *v, arith *g)
     *g = a;
     *u = 1;
     *v = 0;
-    while (g1 ISNT 0)
+    while (g1 != 0)
     {
         q = *g / g1;
-        gtemp=(*g) - q * g1;
-        utemp=(*u) - q * u1;
-        vtemp=(*v) - q * v1;
+        gtemp = (*g) - q * g1;
+        utemp = (*u) - q * u1;
+        vtemp = (*v) - q * v1;
         *g = g1;
         *u = u1;
         *v = v1;
@@ -75,11 +70,11 @@ void gcd_extended (arith a, arith b, arith *u, arith *v, arith *g)
     }
 }
 
-void lift (int m, int c, int *v2, int *v3)
+void lift(int m, int c, int* v2, int* v3)
 {
-    arith vv2, vv3;
-    int u1, u2, u3, r1, r2, r3, v1;
-    int q;
+    register arith vv2, vv3;
+    register int u1, u2, u3, r1, r2, r3, v1;
+    register int q;
 
     vv3 = c;
     v1 = 0;
@@ -87,66 +82,67 @@ void lift (int m, int c, int *v2, int *v3)
     u3 = m;
     u1 = 1;
     u2 = 0;
-    while (2*(vv3)*(vv3) >= m)
+    while (2 * (vv3) * (vv3) >= m)
     {
-        q = u3 / (vv3);
-        r3=(u3) - q * (vv3);
-        r1=(u1) - q * v1;
-        r2=(u2) - q * (vv2);
-        u3 = vv3;
+        q = u3 / (int)(vv3);
+        r3 = (u3) - q * (int)(vv3);
+        r1 = (u1) - q * v1;
+        r2 = (u2) - q * (int)(vv2);
+        u3 = (int)vv3;
         u1 = v1;
-        u2 = vv2;
+        u2 = (int)vv2;
         vv3 = r3;
         v1 = r1;
         vv2 = r2;
     }
-    if (2*(vv2)*(vv2) >= m) (vv2) = 0;
-    *v2 = vv2;
-    *v3 = vv3;
+    if (2 * (vv2) * (vv2) >= m)
+        (vv2) = 0;
+    *v2 = (int)vv2;
+    *v3 = (int)vv3;
 }
 
-void fd_add (field a, field b, field *c)
+void fd_add(field a, field b, field* c)
 {
-    arith val = a;
+    register arith val = a;
     val += b;
     *c = normalize(val);
 }
 
-void fd_sub (field a, field b, field *c)
+void fd_sub(field a, field b, field* c)
 {
-    arith val = a;
+    register arith val = a;
     val -= b;
     *c = normalize(val);
 }
 
-void fd_mult (field a, field b, field *c)
+void fd_mult(field a, field b, field* c)
 {
-    arith val = a;
+    register arith val = a;
     val *= b;
     *c = normalize(val);
 }
 
-void fd_negate (field *a)
+void fd_negate(field* a)
 {
-    arith val = -(*a);
+    register arith val = -(*a);
     *a = normalize(val);
 }
 
-void fd_div (field a, field b, field *c)
+void fd_div(field a, field b, field* c)
 {
-    arith bl = b;
-    arith val;
+    register arith bl = b;
+    register arith val;
     arith binv, m, n;
 
     gcd_extended(bl, characl, &binv, &m, &n);
-    val = a * binv * n;    /* n = 1, or -1 */
+    val = a * binv * n; // n = 1, or -1
     *c = normalize(val);
 }
 
-void fd_recip (field *a)
+void fd_recip(field* a)
 {
-    arith al = *a;
-    arith val;
+    register arith al = *a;
+    register arith val;
     arith ainv, m, n;
 
     gcd_extended(al, characl, &ainv, &m, &n);
@@ -154,12 +150,12 @@ void fd_recip (field *a)
     *a = normalize(val);
 }
 
-field fd_copy (field a)
+field fd_copy(field a)
 {
-    return(a);
+    return (a);
 }
 
-boolean fd_iszero (field a)
+boolean fd_iszero(field a)
 {
-    return(a IS 0);
+    return (a == 0);
 }

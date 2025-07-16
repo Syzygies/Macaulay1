@@ -1,14 +1,14 @@
-/* Copyright 1989 Dave Bayer and Mike Stillman. All rights reserved. */
-#ifdef STATISTICS
-extern long stcomp ;
-extern long stadd ;
-extern long stradd ;
-extern long stdiv ;
-extern long stloop ;
-extern long stspecial ;
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
-#define STAT(var)   { (var)++ ; }
+// Exported globals
+extern long stcomp;
+extern long stadd;
+extern long stradd;
+extern long stdiv;
+extern long stloop;
+extern long stspecial;
 
-#else
-#define STAT(var)   ;
-#endif
+// Exported functions
+void i_stats(void);
+void pr_stats(void);

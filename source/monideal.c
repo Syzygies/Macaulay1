@@ -1,108 +1,132 @@
-/* Copyright 1989 Dave Bayer and Mike Stillman. All rights reserved. */
-#include "ddefs.h"
-#include "vars.h"
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
-// arrow monnext (arrow p);
-// arrow monmake (gmatrix M, int comp, pfi fcn);
-// arrow monhilb (gmatrix M, int comp, pfi fcn);
-// void tm_radical (expterm nexp);
-// arrow monradical (gmatrix M, int comp);
-// void tm_mdivide (expterm nexp);
-// arrow mondivide (gmatrix M, int comp, int *exp);
-// void tm_mdiv (expterm nexp);
-// arrow mondiv (gmatrix M, int comp, expterm vars);
-// int redExp (int *t, int *exp);
-// void findAssPrimes (arrow p, int *exp1, int codim);
-// void wrAss (int *exp, int codim);
-// void mondisplay (arrow head);
-// void codimGotAss (int codim, int *exp);
-// int codim (gmatrix M);
-// void codim_cmd (int argc, char *argv[]);
-// void monprimesGotAss (int codim, int *exp);
-// void monprimes (gmatrix M);
-// void monprimes_cmd (int argc, char *argv[]);
-// long int mondegree (arrow head, int nvars);
-void enumMons (int lastval);
-// long int DDdegree; /* accumulated degree for each associated prime */ degGotAss (int codim, int *exp);
-// long int modDegree (gmatrix M, int thisCodim);
-// void degree_cmd (int argc, char *argv[]);
-// void accumMons (int lastval);
-// gmatrix gm_basis (gmatrix M, expterm vars, int lo, int hi, boolean isbasis);
-// void basis_cmd (int argc, char *argv[]);
-// gmatrix gm_truncate (gmatrix M, expterm vars, int lo);
-// void truncate_cmd (int argc, char *argv[]);
+#include <string.h> // strcpy
+#include "shared.h"
+#include "monideal.h"
+#include "monoms.h"   // monnewhead, monadv
+#include "stdcmds.h"  // stdFirst, stdNext, stdWarning
+#include "standard.h" // for other standard operations if needed
+#include "poly.h"     // e_sub_i, p_monom, p_add, p_kill
+#include "term.h"     // get_comp, sToExp, expToS, exp_degree
+#include "gmatrix.h"  // mod_init, nrows, gmInsert
+#include "plist.h"    // dl_copy
+#include "monitor.h"  // print, printnew, newline, prflush, intflush, prerror
+#include "mac.h"      // have_intr
+#include "vars.h"     // make_var, set_value, current_ring
+#include "stash.h"    // open_stash, get_slug, endof_stash
+#include "charp.h"    // fd_one
+#include "set.h"      // verbose, maxdegree
+#include "ring.h"     // numvars
+#include "qring.h"    // Rideal
+#include "cmds.h"     // doIntCmd, vget_mod
+#include "gm_poly.h"  // get_comp (if not in term.h)
+#include "hilb.h"     // monbagadjoin, monrefund, monadjoin, monreset, monsearch (if not in
+                      // monoms.h)
+#include "human_io.h" // setzerodegs, getVarList, get_defint
+#include "generic.h"  // VMODULE
 
-extern arrow monnewhead();
-extern arrow monadv();
-extern arrow Rideal;
+// Note: The following types must be defined before including monideal.h:
+// - ass_prime_func typedef
+// - cheek structure
+// These should be moved to shared.h in final cleanup
 
-/*--------
- *
- * There are several generators used in this file.  In particular, the
- * routine "findAssPrimes" which finds the associated prime ideals to a given
- * monomial ideal.
- *
- * "gotAss" is the routine which is called after each such prime ideal is found.
- * the parameters are: (*gotAss)(codim, exp)  where "codim" is the codimension
- * of this prime ideal given by "exp": which has exp[i] IS 1 iff variable i is
- * in the prime ideal.
- *
- *--------*/
+// Constants
+constexpr int IDSIZE = 50;
+// MAINVAR comes from shared.h
+// VMODULE comes from generic.h
 
-pfi gotAss;    /* set before using "findAssPrimes" */
-
-arrow monnext (arrow p)
+// Inline functions to replace macros
+static inline bool get_mod(gmatrix *g, int argc, char **argv, int i)
 {
-    while (TRUE) {
+    if (i >= argc)
+        return false;
+    *g = vget_mod(argv[i]);
+    return (*g != NULL);
+}
+
+static inline bool new_mod(variable **p, int argc, char **argv, int i)
+{
+    if (i >= argc)
+        return false;
+    *p = make_var(argv[i], MAINVAR, VMODULE, current_ring);
+    return (*p != NULL);
+}
+
+static inline bool new_savmod(variable **p, char *s)
+{
+    *p = make_var(s, MAINVAR, VMODULE, current_ring);
+    return (*p != NULL);
+}
+
+// There are several generators used in this file.  In particular, the
+// routine "findAssPrimes" which finds the associated prime ideals to a given
+// monomial ideal.
+
+// "gotAss" is the routine which is called after each such prime ideal is found.
+// the parameters are: (*gotAss)(codim, exp)  where "codim" is the codimension
+// of this prime ideal given by "exp": which has exp[i] == 1 iff variable i is
+// in the prime ideal.
+
+ass_prime_func gotAss; // set before using "findAssPrimes"
+
+arrow monnext(arrow p)
+{
+    while (TRUE)
+    {
         p = p->uld.lda[FOW];
-        if (p->uld.ldkind IS 'h') return(NULL);
-        if (p->uld.ldkind ISNT 'm') continue;
-        return(p);
+        if (p->uld.ldkind == 'h')
+            return NULL;
+        if (p->uld.ldkind != 'm')
+            continue;
+        return p;
     }
 }
 
-/* the following routine creates a monomial "head" ideal from the lead terms
-   of the standard basis of M, in row "comp".  The function fcn should expect
-   one parameter: an expterm.  It should modify this argument, if desired.
- */
+// the following routine creates a monomial "head" ideal from the lead terms
+// of the standard basis of M, in row "comp".  The function fcn should expect
+// one parameter: an expterm.  It should modify this argument, if desired.
 
-arrow monmake (gmatrix M, int comp, pfi fcn)
+arrow monmake(gmatrix M, int comp, void (*fcn)(expterm))
 {
     arrow p, head;
-    int i;
+    register int i;
     poly f;
     expterm nexp;
     modgen mg;
 
     head = monnewhead(numvars);
     stdFirst(M, &mg, USESTD);
-    while ((f=stdNext(&mg)) ISNT NULL) {
-        if (comp != get_comp(f)) continue;
-        sToExp(INITIAL(f), nexp);
+    while ((f = stdNext(&mg)) != NULL)
+    {
+        if (comp != get_comp(f))
+            continue;
+        sToExp(poly_initial(f), nexp);
         (*fcn)(nexp);
         monbagadjoin(head, nexp, NULL);
     }
-    /* now add in the stuff from Rideal, if any */
-    if (Rideal ISNT NULL) {
+    // now add in the stuff from Rideal, if any
+    if (Rideal != NULL)
+    {
         p = Rideal;
-        while ((p = monnext(p)) ISNT NULL) {
-            for (i=0; i<numvars; i++)
+        while ((p = monnext(p)) != NULL)
+        {
+            for (i = 0; i < numvars; i++)
                 nexp[i] = p->umn.mexp[i];
             (*fcn)(nexp);
             monbagadjoin(head, nexp, NULL);
         }
     }
-    return(head);
+    return head;
 }
 
-/* the following routine creates a monomial "head" ideal from the lead terms
-   of the standard basis of M, in row "comp".  The function fcn
-   "tell" will be passed to monadjoin, and is used to find hilbert funcs
-   and so on...
-   NULL is returned if the user interrupts the computation.
- */
+// the following routine creates a monomial "head" ideal from the lead terms
+// of the standard basis of M, in row "comp".  The function fcn
+// "tell" will be passed to monadjoin, and is used to find hilbert funcs
+// and so on...
+// NULL is returned if the user interrupts the computation.
 
-arrow monhilb (gmatrix M, int comp, pfi fcn)
+arrow monhilb(gmatrix M, int comp, void (*fcn)(arrow, int))
 {
     arrow p, head;
     poly f;
@@ -111,144 +135,157 @@ arrow monhilb (gmatrix M, int comp, pfi fcn)
 
     head = monnewhead(numvars);
     stdFirst(M, &mg, USESTD);
-    while ((f=stdNext(&mg)) ISNT NULL) {
-        if (comp != get_comp(f)) continue;
-        if (have_intr()) {
+    while ((f = stdNext(&mg)) != NULL)
+    {
+        if (comp != get_comp(f))
+            continue;
+        if (have_intr())
+        {
             monrefund(head);
             print("\n");
-            return(NULL);
+            return NULL;
         }
-        sToExp(INITIAL(f), nexp);
+        sToExp(poly_initial(f), nexp);
         monadjoin(head, nexp, fcn);
-        if (verbose > 0) prflush(".");
+        if (verbose > 0)
+            prflush(".");
     }
-    /* now add in the stuff from Rideal, if any */
-    if (Rideal ISNT NULL) {
+    // now add in the stuff from Rideal, if any
+    if (Rideal != NULL)
+    {
         p = Rideal;
-        while ((p = monnext(p)) ISNT NULL) {
-            if (have_intr()) {
+        while ((p = monnext(p)) != NULL)
+        {
+            if (have_intr())
+            {
                 monrefund(head);
                 print("\n");
-                return(NULL);
+                return NULL;
             }
             monadjoin(head, p->umn.mexp, fcn);
-            if (verbose > 0) prflush(".");
+            if (verbose > 0)
+                prflush(".");
         }
     }
-    return(head);
+    return head;
 }
 
-void tm_radical (expterm nexp)
+void tm_radical(expterm nexp)
 {
-    int j;
+    register int j;
 
-    for (j=0; j<numvars; j++)
-        if (nexp[j] > 0) nexp[j] = 1;
+    for (j = 0; j < numvars; j++)
+        if (nexp[j] > 0)
+            nexp[j] = 1;
 }
 
-arrow monradical (gmatrix M, int comp)
-/* which component to use */
+arrow monradical(gmatrix M, int comp)
 {
-    return(monmake(M, comp, tm_radical));
+    return monmake(M, comp, tm_radical);
 }
 
-int *mondivExp;  /* used in mondivide, mondiv as a parameter to tm_...
-             routines */
+int *mondivExp; /* used in mondivide, mondiv as a parameter to tm_...
+                   routines */
 
-void tm_mdivide (expterm nexp)
+void tm_mdivide(expterm nexp)
 {
-    int j, k;
+    register int j, k;
 
     k = 0;
-    for (j=0; j<numvars; j++)
-        if (mondivExp[j] IS 1)
+    for (j = 0; j < numvars; j++)
+        if (mondivExp[j] == 1)
             nexp[k++] = nexp[j];
-    for (; k<numvars; k++)
+    for (; k < numvars; k++)
         nexp[k] = 0;
 }
 
-arrow mondivide (gmatrix M, int comp, int *exp)
-/* the monomial prime ideal to find primary to */
+arrow mondivide(gmatrix M, int comp, int *exp)
 {
     mondivExp = exp;
-    return(monmake(M, comp, tm_mdivide));
+    return monmake(M, comp, tm_mdivide);
 }
 
-/* the following routine "mondiv" is the same as mondivide, except that the
- * variables are not "compacted" as they are in mondivide.
- */
+// the following routine "mondiv" is the same as mondivide, except that the
+// variables are not "compacted" as they are in mondivide.
 
-void tm_mdiv (expterm nexp)
+void tm_mdiv(expterm nexp)
 {
-    int j;
+    register int j;
 
-    for (j=0; j<numvars; j++)
-        if (mondivExp[j] ISNT 1)
+    for (j = 0; j < numvars; j++)
+        if (mondivExp[j] != 1)
             nexp[j] = 0;
 }
 
-arrow mondiv (gmatrix M, int comp, expterm vars)
-/* this routine creates a monideal from lead terms of M, where each variable i s.t. vars[i] != 1 is set to 1. */
+arrow mondiv(gmatrix M, int comp, expterm vars)
 {
     mondivExp = vars;
-    return(monmake(M, comp, tm_mdiv));
+    return monmake(M, comp, tm_mdiv);
 }
 
-/* redExp ("reduce exp") takes the monomial "t" and the monomial prime ideal
- * "exp" (actually "exp" also contains var NE 0 statements too) and returns
- *  0   if the monomial "t" is in this ideal.
- *  1   if "t" isn't in the ideal but some var can be set to zero.
- *  -1  if each var in "t" cannot be set to zero.
- */
+// redExp ("reduce exp") takes the monomial "t" and the monomial prime ideal
+// "exp" (actually "exp" also contains var NE 0 statements too) and returns
+// 0    if the monomial "t" is in this ideal.
+// 1    if "t" isn't in the ideal but some var can be set to zero.
+// -1   if each var in "t" cannot be set to zero.
 
-int redExp (int *t, int *exp)
+int redExp(int *t, int *exp)
 {
-    boolean isOne;
-    int i;
+    register boolean isOne;
+    register int i;
 
     isOne = TRUE;
-    for (i=0; i<numvars; i++) {
-        if (t[i] > 0) {
-            if (exp[i] IS 1)
-                return(0);
-            if (exp[i] IS 0)
+    for (i = 0; i < numvars; i++)
+    {
+        if (t[i] > 0)
+        {
+            if (exp[i] == 1)
+                return 0;
+            if (exp[i] == 0)
                 isOne = FALSE;
         }
     }
-    if (isOne) return(-1);
-    return(1);
+    if (isOne)
+        return -1;
+    return 1;
 }
 
-int topCodim;  /* used to determine codimension of an ideal: in  findAssPrimes*/
+int topCodim; // used to determine codimension of an ideal: in  findAssPrimes
 
-void findAssPrimes (arrow p, int *exp1, int codim)
-/* current monomial */
+void findAssPrimes(arrow p, int *exp1, int codim)
 {
-    int i;
+    register int i;
     expterm exp;
     int *nexp;
 
-    if (codim > topCodim) {
+    if (codim > topCodim)
+    {
         return;
     }
-    for (i=0; i<numvars; i++) exp[i] = exp1[i];
-    while (TRUE) {
-        if (p IS NULL) {
+    for (i = 0; i < numvars; i++)
+        exp[i] = exp1[i];
+    while (TRUE)
+    {
+        if (p == NULL)
+        {
             (*gotAss)(codim, exp);
             return;
         }
         nexp = p->umn.mexp;
-        switch (redExp(nexp, exp)) {
-        case 0 :
+        switch (redExp(nexp, exp))
+        {
+        case 0:
             p = monnext(p);
             break;
         case -1:
             return;
-        case 1 :
-            for (i=0; i<numvars; i++) {
-                if ((nexp[i] > 0) AND (exp[i] IS 0)) {
+        case 1:
+            for (i = 0; i < numvars; i++)
+            {
+                if ((nexp[i] > 0) && (exp[i] == 0))
+                {
                     exp[i] = 1;
-                    findAssPrimes(monnext(p), exp, codim+1);
+                    findAssPrimes(monnext(p), exp, codim + 1);
                     exp[i] = -1;
                 }
             }
@@ -257,140 +294,140 @@ void findAssPrimes (arrow p, int *exp1, int codim)
     }
 }
 
-void wrAss (int *exp, int codim)
+void wrAss(int *exp, int codim)
 {
-    int i;
+    register int i;
 
     newline();
     print("[%d] ", codim);
-    for (i=0; i<numvars; i++)
-        if (exp[i] IS 1) print("1 ");
-        else print("0 ");
+    for (i = 0; i < numvars; i++)
+        if (exp[i] == 1)
+            print("1 ");
+        else
+            print("0 ");
     prflush("\n");
 }
 
-void mondisplay (arrow head)
+void mondisplay(arrow head)
 {
     arrow p;
     int i;
     int *nexp;
 
     p = head;
-    while ((p = monnext(p)) ISNT NULL) {
+    while ((p = monnext(p)) != NULL)
+    {
         nexp = p->umn.mexp;
         newline();
-        for (i=0; i<numvars; i++)
+        for (i = 0; i < numvars; i++)
             print("%d ", nexp[i]);
         print("\n");
     }
 }
 
-/*----------------------------------------------------
- *
- *  Finding the codimension of a quotient of a free module
- *  by a monomial submodule.
- *
- *----------------------------------------------------*/
+// Finding the codimension of a quotient of a free module
+// by a monomial submodule.
 
-void codimGotAss (int codim, int *exp)
+static void codimGotAss(int codim, int *exp)
 {
-    if (codim <= topCodim) {
-        if (verbose > 0) wrAss(exp, codim);
+    if (codim <= topCodim)
+    {
+        if (verbose > 0)
+            wrAss(exp, codim);
         topCodim = codim;
     }
 }
 
-int codim (gmatrix M)
+int codim(gmatrix M)
 {
     int ncomps;
-    int i, j;
+    register int i, j;
     expterm exp;
     arrow head;
 
     ncomps = nrows(M);
-    topCodim = numvars+1;
+    topCodim = numvars + 1;
     gotAss = codimGotAss;
-    for (i=1; i<=ncomps; i++) {
-        if (verbose > 0) {
+    for (i = 1; i <= ncomps; i++)
+    {
+        if (verbose > 0)
+        {
             newline();
             print("component %d:\n", i);
         }
         head = monradical(M, i);
-        for (j=0; j<numvars; j++)
+        for (j = 0; j < numvars; j++)
             exp[j] = 0;
         findAssPrimes(monnext(head), exp, 0);
         monrefund(head);
     }
-    return(topCodim);
+    return topCodim;
 }
 
-void codim_cmd (int argc, char *argv[])
+int codim_cmd(int argc, char *argv[])
 {
     gmatrix M;
     int cod;
 
-    if ((argc < 2) OR (argc > 3)) {
+    if ((argc < 2) || (argc > 3))
+    {
         printnew("codim <standard basis> [integer result]\n");
-        return;
+        return 1;
     }
-    GET_MOD(M, 1);
+    if (!get_mod(&M, argc, argv, 1))
+        return 0;
     stdWarning(M);
     cod = codim(M);
-    doIntCmd(argv[2], cod, (argc IS 3), "codimension");
+    doIntCmd(argv[2], cod, (argc == 3), "codimension");
+    return 1;
 }
 
-/*----------------------------------------------------
- *
- *  Finding the isolated primes of a quotient of a free
- *  module by a monomial submodule.
- *
- *----------------------------------------------------*/
-
-typedef struct cheek
-{
-    struct cheek *p;
-    short exp[1];
-} cheek;
+// Finding the isolated primes of a quotient of a free
+// module by a monomial submodule.
 
 cheek *cheeks;
 
 char *monprimes_stash;
 gmatrix monprimes_N;
 
-void monprimesGotAss (int codim, int *exp)
+static void monprimesGotAss(int codim, int *exp)
 {
     int i;
     cheek *p;
 
-    p = (cheek *) get_slug(monprimes_stash);
-    p->p = cheeks;
+    p = (cheek *)(void *)get_slug((struct stash *)monprimes_stash);
+    p->next = cheeks;
     cheeks = p;
-    for (i=0; i<numvars; i++) {
-        if (exp[i] == 1) p->exp[i] = 1;
-        else p->exp[i] = 0;
+    for (i = 0; i < numvars; i++)
+    {
+        if (exp[i] == 1)
+            p->exp[i] = 1;
+        else
+            p->exp[i] = 0;
     }
 }
 
-void monprimes (gmatrix M)
+void monprimes(gmatrix M)
 {
     int ncomps;
-    int i, j;
+    register int i, j;
     expterm exp;
     arrow head;
 
     ncomps = nrows(M);
-    topCodim = numvars+1;
+    topCodim = numvars + 1;
     gotAss = monprimesGotAss;
-    for (i=1; i<=ncomps; i++) {
+    for (i = 1; i <= ncomps; i++)
+    {
         head = monradical(M, i);
-        for (j=0; j<numvars; j++)
+        for (j = 0; j < numvars; j++)
             exp[j] = 0;
         findAssPrimes(monnext(head), exp, 0);
         monrefund(head);
     }
 }
 
-void monprimes_cmd (int argc, char *argv[])
+int monprimes_cmd(int argc, char *argv[])
 {
     gmatrix M;
     variable *z;
@@ -398,77 +435,86 @@ void monprimes_cmd (int argc, char *argv[])
     int i;
     cheek *p, *q;
 
-    if (argc != 3) {
+    if (argc != 3)
+    {
         printnew("monprimes <standard basis> <result>\n");
-        return;
+        return 1;
     }
-    GET_MOD(M, 1);
-    NEW_MOD(z, 2);
+    if (!get_mod(&M, argc, argv, 1))
+        return 0;
+    if (!new_mod(&z, argc, argv, 2))
+        return 0;
     monprimes_N = mod_init();
     setzerodegs(monprimes_N, numvars);
 
-    monprimes_stash = open_stash(sizeof(cheek)+(numvars-1)*sizeof(short),
-                                 "cheek");
+    monprimes_stash =
+        open_stash((int)(sizeof(cheek) + (size_t)(numvars - 1) * sizeof(short)), "cheek");
     cheeks = NULL;
 
     monprimes(M);
-    for (p=cheeks; p!=NULL; p=p->p) {
-        for (q=cheeks; q!=NULL; q=q->p) {
-            if (q == p) continue;
-            for (i=0; i<numvars; ++i)
-                if (p->exp[i] == 0 && q->exp[i] != 0) break;
-            if (i == numvars) break; /* false prime */
+    for (p = cheeks; p != NULL; p = p->next)
+    {
+        for (q = cheeks; q != NULL; q = q->next)
+        {
+            if (q == p)
+                continue;
+            for (i = 0; i < numvars; ++i)
+                if (p->exp[i] == 0 && q->exp[i] != 0)
+                    break;
+            if (i == numvars)
+                break; // false prime
         }
-        if (q != NULL) continue; /* false prime */
+        if (q != NULL)
+            continue; // false prime
 
         f = NULL;
-        for (i=0; i<numvars; ++i)
-            if (p->exp[i] == 1) {
-                g = e_sub_i(i+1);
-                p_add (&f, &g);
+        for (i = 0; i < numvars; ++i)
+            if (p->exp[i] == 1)
+            {
+                g = e_sub_i(i + 1);
+                p_add(&f, &g);
                 p_kill(&g);
             }
         gmInsert(monprimes_N, f);
     }
-    endof_stash(monprimes_stash);
+    endof_stash((struct stash *)monprimes_stash);
 
     set_value(z, monprimes_N);
+    return 1;
 }
 
-/*----------------------------------------------------
- *
- * Finding the degree of a quotient of a free module by a monomial submodule.
- *
- *----------------------------------------------------*/
+// Finding the degree of a quotient of a free module by a monomial submodule.
 
-/* The following variables are really parameters to the generator "enumMons" */
+// The following variables are really parameters to the generator "enumMons"
 
-expterm MDmon;     /* monomial generator */
-arrow MDhead;      /* monomial header for artinian ring */
-int MDnvars;       /* number of variables for this routine */
-long int MDdeg;    /* accumulated degree */
+expterm MDmon;  // monomial generator
+arrow MDhead;   // monomial header for artinian ring
+int MDnvars;    // number of variables for this routine
+long int MDdeg; // accumulated degree
 
-long int mondegree (arrow head, int nvars)
+long int mondegree(arrow head, int nvars)
 {
-    int i;
+    register int i;
 
-    for (i=0; i<nvars; i++)
+    for (i = 0; i < nvars; i++)
         MDmon[i] = 0;
     MDhead = head;
     MDnvars = nvars;
     MDdeg = 1;
     enumMons(0);
-    return(MDdeg);
+    return MDdeg;
 }
 
-void enumMons (int lastval)
+void enumMons(int lastval)
 {
-    int i;
+    register int i;
 
-    for (i=lastval; i<MDnvars; i++) {
+    for (i = lastval; i < MDnvars; i++)
+    {
         MDmon[i]++;
         monreset(MDhead, FOW);
-        if (!monsearch(MDhead, FOW, MDmon)) {
+        if (!monsearch(MDhead, FOW, MDmon))
+        {
             MDdeg++;
             enumMons(i);
         }
@@ -476,26 +522,29 @@ void enumMons (int lastval)
     }
 }
 
-/* the following variables are really parameters to the routine "degGotAss"
- * which is inside the generator function "findAssPrimes".
- */
+// the following variables are really parameters to the routine "degGotAss"
+// which is inside the generator function "findAssPrimes".
 
-gmatrix DDmat; /* monomial submodule in question */
-int DDcodim;   /* computed codimension of  DDpl */
-int DDcomp;    /* current component we are trying to find degree of */
-long int DDdegree; /* accumulated degree for each associated prime */ degGotAss (int codim, int *exp)
+gmatrix DDmat;     // monomial submodule in question
+int DDcodim;       // computed codimension of  DDpl
+int DDcomp;        // current component we are trying to find degree of
+long int DDdegree; // accumulated degree for each associated prime
+
+static void degGotAss(int codim, int *exp)
 {
     arrow head;
 
-    if (codim IS DDcodim) {
+    if (codim == DDcodim)
+    {
         head = mondivide(DDmat, DDcomp, exp);
         DDdegree += mondegree(head, DDcodim);
-        if (verbose > 0) intflush("%ld.", DDdegree);
+        if (verbose > 0)
+            intflush("%ld.", (int)DDdegree);
         monrefund(head);
     }
-} /* mod 24feb89 DB */
+} // mod 24feb89 DB
 
-long int modDegree (gmatrix M, int thisCodim)
+long int modDegree(gmatrix M, int thisCodim)
 {
     int j;
     int ncomps;
@@ -507,30 +556,34 @@ long int modDegree (gmatrix M, int thisCodim)
     DDmat = M;
     DDcodim = thisCodim;
     gotAss = degGotAss;
-    for (DDcomp=1; DDcomp<=ncomps; DDcomp++) {
+    for (DDcomp = 1; DDcomp <= ncomps; DDcomp++)
+    {
         head = monradical(M, DDcomp);
-        for (j=0; j<numvars; j++)
+        for (j = 0; j < numvars; j++)
             exp[j] = 0;
         findAssPrimes(monnext(head), exp, 0);
         monrefund(head);
     }
-    if (verbose > 0) prflush("\n");
-    return(DDdegree);
+    if (verbose > 0)
+        prflush("\n");
+    return DDdegree;
 }
 
-void degree_cmd (int argc, char *argv[])
+int degree_cmd(int argc, char *argv[])
 {
     gmatrix M;
     int cod;
-    int deg;
-    boolean oldVerbose;
+    long int deg;
+    int oldVerbose;
 
-    if ((argc < 2) OR (argc > 4)) {
+    if ((argc < 2) || (argc > 4))
+    {
         printnew("degree <standard basis> [integer codim] [integer degree]\n");
-        return;
+        return 1;
     }
 
-    GET_MOD(M, 1);
+    if (!get_mod(&M, argc, argv, 1))
+        return 0;
     stdWarning(M);
     oldVerbose = verbose;
     verbose = FALSE;
@@ -538,43 +591,48 @@ void degree_cmd (int argc, char *argv[])
     doIntCmd(argv[2], cod, (argc >= 3), "codimension");
     verbose = oldVerbose;
     deg = modDegree(M, cod);
-    doIntCmd(argv[3], deg, (argc IS 4), "degree     ");
+    doIntCmd(argv[3], (int)deg, (argc == 4), "degree     ");
+    return 1;
 }
 
-/*-------- computing a k-basis of a module -------------------------*/
+// computing a k-basis of a module
 
-/* the following variables are global to "accumMons", which does the actual
- * work of the "basis" command.  They are set in the gm_basis routine.
- */
+// the following variables are global to "accumMons", which does the actual
+// work of the "basis" command.  They are set in the gm_basis routine.
 
-gmatrix MAresult;  /* result matrix where we throw our monomials */
-arrow MAhead;      /* monomial ideal consisting of lead terms of M */
-int * MAmon;       /* monomial being constructed in accumMons */
-int MAcomp;        /* row number of monomial being constructed */
-int MAcompDeg;     /* degree of row "MAcomp" */
-int MAlo, MAhi;    /* lo and hi degrees allowed for monomial */
-int * MAvars;      /* variables allowed */
+gmatrix MAresult; // result matrix where we throw our monomials
+arrow MAhead;     // monomial ideal consisting of lead terms of M
+int *MAmon;       // monomial being constructed in accumMons
+int MAcomp;       // row number of monomial being constructed
+int MAcompDeg;    // degree of row "MAcomp"
+int MAlo, MAhi;   // lo and hi degrees allowed for monomial
+int *MAvars;      // variables allowed
 
-void accumMons (int lastval)
+void accumMons(int lastval)
 {
-    int i, d, e;
+    register int i, d, e;
     poly f;
 
-    for (i=lastval; i<numvars; i++) {
-        if (MAvars[i] ISNT 1) continue;
+    for (i = lastval; i < numvars; i++)
+    {
+        if (MAvars[i] != 1)
+            continue;
         MAmon[i]++;
         e = exp_degree(MAmon);
         d = MAcompDeg + e;
-        if ((d > MAhi) OR (e > maxdegree)) {
-            /* maxdegree = largest allowed degree */
+        if ((d > MAhi) || (e > maxdegree))
+        {
+            // maxdegree = largest allowed degree
             MAmon[i]--;
             continue;
         }
         monreset(MAhead, FOW);
-        if (!monsearch(MAhead, FOW, MAmon)) {
-            if (d >= MAlo) {
+        if (!monsearch(MAhead, FOW, MAmon))
+        {
+            if (d >= MAlo)
+            {
                 f = p_monom(fd_one);
-                expToS(MAmon, MAcomp, INITIAL(f));
+                expToS(MAmon, MAcomp, poly_initial(f));
                 gmInsert(MAresult, f);
             }
             accumMons(i);
@@ -583,8 +641,7 @@ void accumMons (int lastval)
     }
 }
 
-gmatrix gm_basis (gmatrix M, expterm vars, int lo, int hi, boolean isbasis)
-/* TRUE: k-basis, FALSE: truncate */
+gmatrix gm_basis(gmatrix M, expterm vars, int lo, int hi, boolean isbasis)
 {
     int i;
     expterm exp;
@@ -594,11 +651,13 @@ gmatrix gm_basis (gmatrix M, expterm vars, int lo, int hi, boolean isbasis)
     MAlo = lo;
     MAhi = hi;
     MAvars = vars;
-    for (MAcomp=1; MAcomp<=nrows(M); MAcomp++) {
-        MAcompDeg = DREF(M->degrees, MAcomp);
-        if ((MAcompDeg > hi) AND (isbasis)) continue;
+    for (MAcomp = 1; MAcomp <= nrows(M); MAcomp++)
+    {
+        MAcompDeg = dlist_ref(&M->degrees, MAcomp);
+        if ((MAcompDeg > hi) && (isbasis))
+            continue;
         MAhead = mondiv(M, MAcomp, vars);
-        for (i=0; i<numvars; i++)
+        for (i = 0; i < numvars; i++)
             exp[i] = 0;
         MAmon = exp;
 
@@ -611,16 +670,15 @@ gmatrix gm_basis (gmatrix M, expterm vars, int lo, int hi, boolean isbasis)
             accumMons(0);
         monrefund(MAhead);
     }
-    return(MAresult);
+    return MAresult;
 }
 
-/* basis: finds a k-basis of the module presented by <matrix> (M), assuming
- * that the variables are those of the [variable list].  The user is prompted
- * for the lowest and highest degrees: A basis is given for the module
- * in the range lo <= d <= hi.
- */
+// basis: finds a k-basis of the module presented by <matrix> (M), assuming
+// that the variables are those of the [variable list].  The user is prompted
+// for the lowest and highest degrees: A basis is given for the module
+// in the range lo <= d <= hi.
 
-void basis_cmd (int argc, char *argv[])
+int basis_cmd(int argc, char *argv[])
 {
     expterm vars;
     gmatrix M;
@@ -628,34 +686,39 @@ void basis_cmd (int argc, char *argv[])
     int lo, hi;
     char s[IDSIZE];
 
-    if (argc < 3) {
+    if (argc < 3)
+    {
         printnew("k_basis <matrix> <result matrix> [variable list]\n");
-        return;
+        return 1;
     }
-    GET_MOD(M, 1);
+    if (!get_mod(&M, argc, argv, 1))
+        return 0;
     strcpy(s, argv[2]);
-    if (NOT(getVarList(argc-3, argv+3, vars))) return;
+    if (!(getVarList(argc - 3, (const char **)(void *)(argv + 3), vars)))
+        return 1;
     lo = get_defint("lowest degree (default=no lowest degree) ", -5000);
     hi = get_defint("highest degree (default=no high degree)  ", 5000);
     stdWarning(M);
-    NEW_savMOD(p, s);
+    if (!new_savmod(&p, s))
+        return 0;
     set_value(p, gm_basis(M, vars, lo, hi, TRUE));
+    return 1;
 }
-/*
-gmatrix gm_truncate (gmatrix M, expterm vars, int lo)
-{
-    gmatrix result;
-    int i;
 
-    result = gm_basis(M, vars, lo, lo, FALSE);
-    for (i=1; i<=nrows(M); i++) {
-    if (DREF(M->degrees, i) > lo)
-        gmInsert(result, e_sub_i(i));
-    }
-    return(result);
-}
-*/
-void truncate_cmd (int argc, char *argv[])
+// gmatrix gm_truncate(gmatrix M, expterm vars, int lo)
+// {
+// gmatrix result;
+// int i;
+
+// result = gm_basis(M, vars, lo, lo, FALSE);
+// for (i = 1; i <= nrows(M); i++) {
+// if (dlist_ref(&M->degrees, i) > lo)
+// gmInsert(result, e_sub_i(i));
+// }
+// return result;
+// }
+
+int truncate_cmd(int argc, char *argv[])
 {
     expterm vars;
     gmatrix M;
@@ -663,15 +726,20 @@ void truncate_cmd (int argc, char *argv[])
     int lo;
     char s[IDSIZE];
 
-    if (argc < 3) {
+    if (argc < 3)
+    {
         printnew("truncate <matrix> <result matrix> [variable list]\n");
-        return;
+        return 1;
     }
-    GET_MOD(M, 1);
+    if (!get_mod(&M, argc, argv, 1))
+        return 0;
     strcpy(s, argv[2]);
-    if (NOT(getVarList(argc-3, argv+3, vars))) return;
+    if (!(getVarList(argc - 3, (const char **)(void *)(argv + 3), vars)))
+        return 1;
     lo = get_defint("lowest degree (default=0) ", 0);
     stdWarning(M);
-    NEW_savMOD(p, s);
+    if (!new_savmod(&p, s))
+        return 0;
     set_value(p, gm_basis(M, vars, lo, lo, FALSE));
+    return 1;
 }

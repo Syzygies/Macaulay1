@@ -1,0 +1,239 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/Volumes/All/Global/Code/Macaulay/Macaulay1"
+	],
+	"file_history":
+	[
+		"/Volumes/All/Global/Code/Macaulay/Now/source/C23/smallterm.c",
+		"/Volumes/All/Global/Code/Macaulay/Now/justfile",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/input/test",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/test/in",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux.rb",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/input/here",
+		"/Volumes/All/Global/Code/Macaulay/Now/focus/tmux.md",
+		"/Volumes/All/Global/Code/Macaulay/Now/focus/both.md",
+		"/Volumes/All/Global/Code/Macaulay/Now/focus/ask.md",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/here/in",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/here/out",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/here/feed",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/tmux.md",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/here/raw",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/here/state/out",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/debug/bug-1",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/test/raw",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/test/out",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/here/new",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/test/state/out",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/test/new",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/input/node.txt",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/input/twisted.txt",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/input/here.txt",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/input/lldb.txt",
+		"/Volumes/All/Global/Code/Macaulay/Now/.claude/settings.json",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/input/plain.txt",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/hook/log.txt",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/here/debug/new_calculation.txt",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/plain/in",
+		"/Volumes/All/Global/Code/Macaulay/Now/Macaulay.sublime-project",
+		"/Volumes/All/Global/Code/Macaulay/Now/CLAUDE.md",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/hook/settings.json",
+		"/Volumes/All/Global/Code/Macaulay/Now/log/07-06-1628.md",
+		"/Volumes/All/Global/Code/Macaulay/Now/log/07-13-0418.md",
+		"/Volumes/All/Global/Code/Macaulay/Now/log/07-14-1854.md",
+		"/Volumes/All/Global/Code/Macaulay/Now/today/07-09/good/settings.local.json",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/test/state/in",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/input/tmux.rb",
+		"/Volumes/All/Global/Code/Macaulay/Now/node/bin/bashrc",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/unison.sh",
+		"/Volumes/All/Global/Code/Macaulay/Now/node/readme.md",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/node/input",
+		"/Volumes/All/Global/Code/Macaulay/Now/today/07-13/a.txt",
+		"/Volumes/All/Global/Code/Macaulay/Now/today/07-13/plan.md",
+		"/Volumes/All/Global/Code/Macaulay/Now/today/07-13/plan.txt",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/input/test.txt",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/tmux/node/output",
+		"/Volumes/All/Global/Code/Macaulay/Now/bin/org-gripe.sh",
+		"/Volumes/All/Global/Code/Macaulay/Now/2025-07-13/2025-07-13.txt",
+		"/Volumes/All/Global/Code/Macaulay/Macaulay1-convert/bin/tmux-session.rb",
+		"/Volumes/All/Global/Code/Macaulay/Macaulay1-convert/bin/tmux/input/node.txt",
+		"/Volumes/All/Global/Code/Macaulay/Macaulay1-convert/bin/settings.rb",
+		"/Volumes/All/Global/Code/Macaulay/Macaulay1-convert/.claude/settings.json",
+		"/Volumes/All/Global/Code/Macaulay/Macaulay1-convert/bin/tmux/node.txt",
+		"/Volumes/All/Global/Code/Macaulay/Macaulay1-convert/bin/tmux/input/tmux.txt",
+		"/Volumes/All/Global/Code/Macaulay/Macaulay1-convert/justfile",
+		"/Volumes/All/Global/Code/Macaulay/Macaulay1-convert/bin/tmux/tmux.md",
+		"/Volumes/All/Global/Code/Macaulay/Macaulay1-convert/bin/unison.sh"
+	],
+	"find":
+	{
+		"height": 29.0
+	},
+	"find_in_files":
+	{
+		"height": 107.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"scrollbar_highlights": true,
+		"show_context": true,
+		"use_buffer2": true,
+		"use_gitignore": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 29.0
+	},
+	"input":
+	{
+		"height": 41.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.SublimeLinter":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"output.find_results":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"pinned_build_system": "",
+	"project": "Public-Macaulay.sublime-project",
+	"replace":
+	{
+		"height": 54.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 221.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

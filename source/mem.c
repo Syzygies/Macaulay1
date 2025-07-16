@@ -1,27 +1,29 @@
-/* Copyright 1989 Dave Bayer and Mike Stillman. All rights reserved. */
-#include "vars.h"
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
-// void i_stashes ();
-// char * mkPolyStash (int nblocks);
-// gmatrix new_mod ();
-// char * get_small (int size);
+#include "shared.h"
+#include "mem.h"
+#include "stash.h"
 
-#define WORD 4
+// Constants
+#ifdef SPARC
+constexpr int WORD = 4;
+#else
+constexpr int WORD = 2;
+#endif
+constexpr int BLOCKSIZE = 4400;
 
-#define BLOCKSIZE 4400
-
-extern variable *fabsvar();
-extern int last_var;
-
-char *array_stash;     /* should be set by array_init at beginning
-                            of program */
+// Global variables
+// array_stash is defined in array.c and declared in array.h
 char *mod_stash;
 char *std_stash;
-char *small_ptr;       /* these 3 vars are used for "small" storage, */
-char *small_stash;     /* which won't ever be retrieved */
-int amt_left;
 
-void i_stashes ()
+// Static variables for small allocation management
+static char *small_ptr;   // these 3 vars are used for "small" storage,
+static char *small_stash; // which won't ever be retrieved
+static int amt_left;
+
+void i_stashes(void)
 {
     mod_stash = open_stash(sizeof(struct modrec), "modules");
     std_stash = open_stash(sizeof(struct mn_stdrec), "std bases");
@@ -29,31 +31,39 @@ void i_stashes ()
     amt_left = 0;
 }
 
-char * mkPolyStash (int nblocks)
+char *mkPolyStash(int nblocks)
 {
-    return(open_stash(field_size + sizeof(poly) + (nblocks)*sizeof(int),
-                      "polys in ring"));
+    // Allocate space for the struct pol plus the monomial data
+    // The coef field is already part of struct pol, so we don't add field_size
+    // CRITICAL 64-bit fix: term data is smallmon (unsigned long), not int!
+    unsigned int size =
+        (unsigned int)sizeof(struct pol) + (unsigned int)nblocks * (unsigned int)sizeof(smallmon);
+    return open_stash((int)size, "polys in ring");
 }
 
-gmatrix new_mod ()
+gmatrix new_mod(void)
 {
-    return((gmatrix ) get_slug(mod_stash));
+    return (gmatrix)(void *)get_slug((struct stash *)mod_stash);
 }
 
-char * get_small (int size)
+char *get_small(int size)
 {
     char *p;
 
-    if (size IS 0) return(NULL);   /* added: Dec. 2, 85 MES */
+    if (size == 0)
+        return NULL; // added: Dec. 2, 85 MES
 
-    while (size%WORD != 0) ++size;
-    if (size > BLOCKSIZE) return(NULL);
-    if (size > amt_left) {
-        small_ptr = get_slug(small_stash);
+    while (size % WORD != 0)
+        ++size;
+    if (size > BLOCKSIZE)
+        return NULL;
+    if (size > amt_left)
+    {
+        small_ptr = get_slug((struct stash *)small_stash);
         amt_left = BLOCKSIZE;
     }
     p = small_ptr;
     small_ptr += size;
     amt_left -= size;
-    return(p);
+    return p;
 }
